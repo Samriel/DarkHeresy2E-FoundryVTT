@@ -1,0 +1,15 @@
+<div class="dark-heresy chat roll">
+    <div class="background border">
+        <h1>{{name}}</h1>
+        {{#each lines}}
+            <p>{{this}}</p>
+        {{/each}}
+        {{#if tests.length}}
+        <div class="wrapper flex-column">
+            {{#each tests}}
+                <button class="invoke-mind-test dh-tall" data-test="{{key}}">{{label}}</button>
+            {{/each}}
+        </div>
+        {{/if}}
+    </div>
+</div>
