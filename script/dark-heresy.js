@@ -34,6 +34,7 @@ import { registerAreas } from "./common/area.js";
 import { registerWeapons } from "./common/weapons.js";
 import { replaceSymbols } from "./common/roll.js";
 import DarkHeresyUtil from "./common/util.js";
+import { registerTablesApi, registerTablesSocket } from "./common/tables.js";
 import DhMacroUtil from "./common/macro.js";
 import Dh from "./common/config.js";
 
@@ -66,6 +67,7 @@ Hooks.once("init", function() {
     registerQualities();
     registerWeapons({ prepareCommonRoll, replaceSymbols,
         createCharacteristicRollData: (actor, key) => DarkHeresyUtil.createCharacteristicRollData(actor, key) });
+    registerTablesApi();
     game.macro = DhMacroUtil;
     const sheets = foundry.applications.apps.DocumentSheetConfig;
     sheets.unregisterSheet(Actor, "core", foundry.appv1.sheets.ActorSheet);
@@ -120,6 +122,7 @@ Hooks.once("ready", function() {
     migrateWorld();
     registerDamageSocket();
     registerAreas();
+    registerTablesSocket();
     CONFIG.ChatMessage.documentClass.prototype.getRollData = function() {
         return this.getFlag("dark-heresy", "rollData");
     };

@@ -57,6 +57,7 @@ function preloadHandlebarsTemplates() {
         "systems/dark-heresy/template/chat/critical.hbs",
         "systems/dark-heresy/template/chat/evasion.hbs",
         "systems/dark-heresy/template/chat/emptyMag.hbs",
+        "systems/dark-heresy/template/chat/table-result.hbs",
 
         "systems/dark-heresy/template/dialog/common-roll.hbs",
         "systems/dark-heresy/template/dialog/combat-roll.hbs",

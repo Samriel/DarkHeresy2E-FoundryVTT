@@ -1,0 +1,20 @@
+<div class="dh-table-result">
+    <div class="dh-table-ref">
+        {{localize "TABLES.TABLE"}} {{result.number}}{{#if result.title}} «{{result.title}}»{{/if}}{{#if result.source}} ({{result.source}}, {{localize "QUALITY.PAGE"}} {{result.page}}){{/if}}:
+        <strong>{{result.label}}</strong>{{#if result.name}} — <strong>{{result.name}}</strong>{{/if}}
+    </div>
+    {{#if result.hasText}}
+    <p class="dh-table-text">{{result.text}}</p>
+    {{else}}
+    <p class="dh-table-text"><em>{{localize "TABLES.NO_TEXT"}}</em></p>
+    {{/if}}
+    {{#if (and actorUuid result.conditions.length)}}
+    <div class="dh-table-conditions">
+        {{#each result.conditions}}
+        <button type="button" class="dh-apply-condition" data-uuid="{{../actorUuid}}" data-condition="{{id}}">
+            <img src="{{img}}" alt=""> {{localize "TABLES.APPLY_CONDITION"}}: {{name}}
+        </button>
+        {{/each}}
+    </div>
+    {{/if}}
+</div>

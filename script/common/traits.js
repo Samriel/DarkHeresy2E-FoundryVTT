@@ -151,6 +151,7 @@ export function onFearClick(event, prepareCommonRoll, DarkHeresyUtil) {
     const rollData = DarkHeresyUtil.createFearTestRolldata(actor);
     rollData.target.modifier = fear.modifier;
     rollData.name = game.i18n.format("FEAR.TEST_NAME", { name: fear.name, rating: fear.rating });
+    rollData.fear = { rating: fear.rating, combat: true }; // fear cards are posted only in a started combat
     prepareCommonRoll(rollData);
 }
 

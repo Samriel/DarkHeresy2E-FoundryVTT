@@ -1,5 +1,6 @@
 import { traitRating, traitArmour, unnaturalRatings, daemonicApplies } from "./traits.js";
 import { qualityValue } from "./qualities.js";
+import { criticalEffect } from "./tables.js";
 
 export class DarkHeresyActor extends Actor {
 
@@ -452,7 +453,7 @@ export class DarkHeresyActor extends Actor {
             if (wounds === maxWounds) {
                 // All new wounds are critical
                 criticalWounds += woundsToAdd;
-                this._recordDamage(damageTaken, woundsToAdd, damage, "Critical");
+                this._recordDamage(damageTaken, woundsToAdd, damage, "Critical", criticalWounds);
 
             } else if (wounds + woundsToAdd > maxWounds) {
                 // Will bring wounds to max and add left overs as crits
@@ -461,7 +462,7 @@ export class DarkHeresyActor extends Actor {
                 woundsToAdd = (wounds + woundsToAdd) - maxWounds;
                 criticalWounds += woundsToAdd;
                 wounds = maxWounds;
-                this._recordDamage(damageTaken, woundsToAdd, damage, "Critical");
+                this._recordDamage(damageTaken, woundsToAdd, damage, "Critical", criticalWounds);
             } else {
                 this._recordDamage(damageTaken, woundsToAdd, damage, "Wounds");
                 wounds += woundsToAdd;
@@ -498,13 +499,15 @@ export class DarkHeresyActor extends Actor {
      * @param {string} damageObject.location damage location
      * @param {string} damageObject.type damage type
      * @param {string} source source of the damage
+     * @param {number} [total] total critical damage after this hit (critical damage only)
      */
-    _recordDamage(damageRolls, damage, damageObject, source) {
+    _recordDamage(damageRolls, damage, damageObject, source, total) {
         damageRolls.push({
             damage,
             source,
             location: damageObject.location,
-            type: damageObject.type
+            type: damageObject.type,
+            ...(total !== undefined ? { total } : {})
         });
     }
 
@@ -546,7 +549,19 @@ export class DarkHeresyActor extends Actor {
      */
     async _showCritMessage(rolls, target, totalWounds, totalCritWounds, special = "") {
         if (rolls.length === 0) return;
+        // Critical effect text: total critical damage for crits, the 1d5 for Righteous Fury (core p. 280, 286)
+        const troop = this.type === "npc" && this.system.type === "troop";
+        for (const roll of rolls) {
+            if (roll.source === "Critical" && roll.damage > 0) {
+                roll.effect = criticalEffect(roll.type, roll.location, roll.total);
+            } else if (roll.source === "Critical Effect (RF)") {
+                roll.effect = criticalEffect(roll.type, roll.location, roll.damage);
+                roll.righteousFury = true;
+                roll.troopDies = troop;
+            }
+        }
         const html = await foundry.applications.handlebars.renderTemplate("systems/dark-heresy/template/chat/critical.hbs", {
+            actorUuid: this.uuid,
             rolls,
             target,
             totalWounds,

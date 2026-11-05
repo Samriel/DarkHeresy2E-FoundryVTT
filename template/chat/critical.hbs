@@ -4,7 +4,24 @@
         <h3>{{target}}</h3>
         <ul style="text-align: left; display: inline-block;">
             {{#each rolls}}
-            <li>{{damage}} {{damageTypeLong type}} as {{source}} ({{localize location}})</li>
+            <li>{{damage}} {{damageTypeLong type}} as {{source}} ({{localize location}})
+                {{#if effect}}
+                <div class="dh-critical-effect">
+                    {{#if righteousFury}}
+                    <strong>{{localize "TABLES.RF_EFFECT"}}</strong>
+                    {{else}}
+                    <strong>{{localize "TABLES.CRITICAL_EFFECT" total=total}}</strong>
+                    {{/if}}
+                    {{> "systems/dark-heresy/template/chat/table-result.hbs" result=effect actorUuid=../actorUuid}}
+                    {{#if troopDies}}
+                    <p><strong>{{localize "TABLES.RF_TROOP"}}</strong></p>
+                    <div class="dh-table-conditions">
+                        <button type="button" class="dh-apply-condition" data-uuid="{{../actorUuid}}" data-condition="dead">{{localize "TABLES.APPLY_CONDITION"}}: {{localize "EFFECT.StatusDead"}}</button>
+                    </div>
+                    {{/if}}
+                </div>
+                {{/if}}
+            </li>
             {{/each}}
         </ul>
         <br>

@@ -80,6 +80,9 @@
                 {{else}}
                     <p><strong style="color: var(--color-failure)">{{localize "CHAT.HAS_PSYCHIC_PHENOMENA"}}</strong></p>
                 {{/if}}
+                <div class="wrapper flex-column">
+                    <button class="roll-phenomena">{{localize "TABLES.ROLL_PHENOMENA"}}{{#if psy.phenomena}} ({{dhSigned psy.phenomena.total}}){{/if}}</button>
+                </div>
             {{/if}}
         {{/if}}
         {{#if flags.isAttack}}

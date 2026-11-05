@@ -1,6 +1,7 @@
 import { blastArea, sprayArea, sprayJammed } from "./area.js";
 import { qualityValue } from "./qualities.js";
 import { checkWeaponJam, setSprayJam } from "./weapons.js";
+import { phenomenaModifier, fearConsequences } from "./tables.js";
 
 /**
  * Roll a generic roll, and post the result to chat.
@@ -18,6 +19,7 @@ export async function commonRoll(rollData) {
             rollData.weapon.traits);
     }
     await _sendRollToChat(rollData);
+    if (rollData.flags.isFear && !rollData.flags.isSuccess) await fearConsequences(rollData);
 }
 
 /**
@@ -420,10 +422,16 @@ async function _rollRighteousFury() {
 
 /**
  * Check for psychic phenomena (i.e, the user rolled two matching numbers, etc.), and add the result to the rollData.
+ * Table 6-1 (core p. 239): a pushing unbound or daemonic psyker always causes phenomena.
  * @param {object} rollData
  */
 function _computePsychicPhenomena(rollData) {
-    rollData.psy.hasPhenomena = rollData.psy.push ? !_isDouble(rollData.result) : _isDouble(rollData.result);
+    const alwaysWhenPushing = ["unbound", "daemonic"].includes(rollData.psy.class);
+    if (rollData.psy.push) rollData.psy.hasPhenomena = alwaysWhenPushing || !_isDouble(rollData.result);
+    else rollData.psy.hasPhenomena = _isDouble(rollData.result);
+    if (rollData.psy.hasPhenomena && rollData.psy.display) {
+        rollData.psy.phenomena = phenomenaModifier(rollData.psy, game.actors.get(rollData.ownerId) ?? null);
+    }
 }
 
 /**

@@ -1,0 +1,17 @@
+<div class="dark-heresy chat roll">
+    <div class="background border">
+        <h1>{{localize "TABLES.PHENOMENA"}}{{#if name}}: {{name}}{{/if}}</h1>
+        <p><strong>{{localize "TABLES.ROLL"}}:</strong> {{roll}}{{#if modifier}} ({{localize "TABLES.INCLUDING"}} {{dhSigned modifier}}{{#each parts}}{{#if @first}}: {{else}}, {{/if}}{{label}} {{dhSigned value}}{{/each}}){{/if}}</p>
+        {{> "systems/dark-heresy/template/chat/table-result.hbs" result=phenomena actorUuid=actorUuid}}
+        {{#if alternative}}
+        <p><strong>{{localize "TABLES.FAVOURED_BY_WARP"}}:</strong> {{alternative.roll}}</p>
+        {{> "systems/dark-heresy/template/chat/table-result.hbs" result=alternative actorUuid=actorUuid}}
+        {{/if}}
+        {{#if perils}}
+        <h3 style="color: var(--color-failure)">{{localize "TABLES.PERILS"}}</h3>
+        <p><strong>{{localize "TABLES.ROLL"}}:</strong> {{perils.roll}}{{#if perils.modifier}} ({{localize "TABLES.INCLUDING"}} {{dhSigned perils.modifier}}){{/if}}</p>
+        {{#if daemonic}}<p><em>{{localize "TABLES.PERILS_DAEMONIC"}}</em></p>{{/if}}
+        {{> "systems/dark-heresy/template/chat/table-result.hbs" result=perils actorUuid=actorUuid}}
+        {{/if}}
+    </div>
+</div>

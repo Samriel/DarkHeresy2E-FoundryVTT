@@ -1,0 +1,17 @@
+<div class="dark-heresy chat roll">
+    <div class="background border">
+        <h1>{{localize "TABLES.FEAR_FAILED"}}: {{name}}</h1>
+        <p><strong>{{localize "CHAT.DOF"}}:</strong> {{dof}}</p>
+        {{#if combat}}
+        <h3 style="color: var(--color-failure)">{{localize "TABLES.SHOCK"}}</h3>
+        <p><strong>{{localize "TABLES.ROLL"}}:</strong> {{shock.roll}}{{#if shock.modifier}} ({{localize "TABLES.INCLUDING"}} {{dhSigned shock.modifier}}){{/if}}</p>
+        {{> "systems/dark-heresy/template/chat/table-result.hbs" result=shock actorUuid=actorUuid}}
+        {{else}}
+        <p>{{localize "TABLES.SHAKEN"}}</p>
+        {{/if}}
+        {{#if insanity}}
+        <p><strong>{{localize "TABLES.INSANITY"}}:</strong> +{{insanity.points}}{{#if insanity.applied}} ({{localize "TABLES.INSANITY_TOTAL"}} {{insanity.total}}){{else}} — {{localize "TABLES.INSANITY_NOT_APPLIED"}}{{/if}}</p>
+        {{#if insanity.trauma}}<p><strong style="color: var(--color-failure)">{{localize "TABLES.TRAUMA_TEST"}}</strong></p>{{/if}}
+        {{/if}}
+    </div>
+</div>

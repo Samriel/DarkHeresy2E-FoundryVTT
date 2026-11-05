@@ -136,7 +136,8 @@ export default class DarkHeresyUtil {
     static createFearTestRolldata(actor) {
         const characteristic = actor.characteristics.willpower;
         return foundry.utils.mergeObject(this.createCommonNormalRollData(actor, characteristic), {
-            name: "FEAR.HEADER"
+            name: "FEAR.HEADER",
+            flags: { isFear: true }
         });
     }
 

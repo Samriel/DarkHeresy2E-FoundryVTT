@@ -5,6 +5,7 @@ import { onApplyToTargetsClick, applyToActors } from "./damage.js";
 import { onFearClick } from "./traits.js";
 import { onSprayDodgeClick } from "./area.js";
 import { weaponChatListeners } from "./weapons.js";
+import { onApplyConditionClick, onPhenomenaClick } from "./tables.js";
 
 
 /**
@@ -19,6 +20,12 @@ export function chatListeners(html) {
     html.querySelectorAll(".invoke-fear")?.forEach(button => button.addEventListener("click", event => onFearClick(event, prepareCommonRoll, DarkHeresyUtil)));
     html.querySelectorAll(".spray-dodge")?.forEach(button => button.addEventListener("click", event => onSprayDodgeClick(event, prepareCommonRoll, DarkHeresyUtil)));
     weaponChatListeners(html);
+    html.querySelectorAll(".dh-apply-condition")?.forEach(button => button.addEventListener("click", event => onApplyConditionClick(event)));
+    const message = game.messages.get(html.dataset?.messageId);
+    html.querySelectorAll(".roll-phenomena")?.forEach(button => {
+        if (message?.getFlag("dark-heresy", "phenomenaRolled")) button.disabled = true;
+        button.addEventListener("click", event => onPhenomenaClick(event));
+    });
     html.querySelectorAll(".reload-Weapon")?.forEach(button => button.addEventListener("click", event => onReloadClick(event)));
     html.querySelectorAll(".dark-heresy.chat.roll>.background.border")?.forEach(button => button.addEventListener("dblclick", event => onChatRollClick(event)));
 }
