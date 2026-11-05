@@ -51,9 +51,8 @@ export default class AmmunitionData extends EquipmentItemData {
 
     /** @inheritdoc */
     static migrateData(source) {
-        super.migrateData(source);
-
         this.migrateDamageModifier(source);
+        return super.migrateData(source);
     }
 
     static migrateDamageModifier(source) {
