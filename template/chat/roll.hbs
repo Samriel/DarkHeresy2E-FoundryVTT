@@ -29,6 +29,9 @@
         {{#if attackType}}
             <p><strong>{{localize "CHAT.ATTACK_TYPE"}}:</strong> {{attackType.text}}</p>
         {{/if}}
+        {{#if twoWeapon}}
+            <p><em>{{localize "TWO_WEAPON.CHAT" penalty=twoWeapon.penalty}}</em></p>
+        {{/if}}
         {{#if calledShot}}
             <p><strong>{{localize "DIALOG.CALLED_SHOT_LOCATION"}}:</strong> {{localize calledShot}}</p>
         {{/if}}

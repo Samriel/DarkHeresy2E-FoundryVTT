@@ -1,8 +1,9 @@
 import { commonRoll, combatRoll, reportEmptyClip } from "./roll.js";
 import { applySituationalModifiers } from "./situational.js";
-import { weaponReady } from "./weapons.js";
+import { weaponReady, weaponOf } from "./weapons.js";
 import { SUPPRESSION, canSuppress, applyPinnedPenalty } from "./pinning.js";
 import { applyOwnConditions, rollActor, feintTarget } from "./conditions.js";
+import { twoWeaponOption, applyTwoWeapon } from "./two-weapon.js";
 import { psychicDialogInfo } from "./psychic.js";
 import { offerFateBonus, applyFateBonus } from "./fate.js";
 
@@ -96,6 +97,8 @@ export async function prepareCombatRoll(rollData, actorRef) {
             rollData.attackType = { ...rollData.attackType, name: Object.keys(attackTypes).find(key => key !== "none") };
         }
         offerFateBonus(rollData);
+        // Two-Weapon Wielder: offer the second-weapon attack (core p. 281)
+        rollData.twoWeaponOption = twoWeaponOption(rollActor(rollData) ?? attacker, rollData);
         const html = await foundry.applications.handlebars.renderTemplate("systems/dark-heresy/template/dialog/combat-roll.hbs",
             { ...rollData, attackTypesRanged: attackTypes });
         let dialog = new Dialog({
@@ -125,6 +128,8 @@ export async function prepareCombatRoll(rollData, actorRef) {
                         const feint = rollData.attackType.name === "standard" ? feintTarget(rollActor(rollData) ?? actorRef) : null;
                         if (feint && game.user.targets.size === 1 && [...game.user.targets][0].id === feint) rollData.feint = feint;
                         else delete rollData.feint;
+                        const twoWeaponWarnings = applyTwoWeapon(rollData, html.find("#twoWeapon")[0]?.checked, weaponOf(rollData));
+                        twoWeaponWarnings.forEach(w => ui.notifications.warn(w));
                         const calledShot = html.find("#calledShot")[0];
                         rollData.calledShot = attackType?.value === "called_shot" && calledShot
                             ? game.darkHeresy.config.hitLocations[calledShot.value] : null;
