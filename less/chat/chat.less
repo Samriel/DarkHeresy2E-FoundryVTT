@@ -54,7 +54,10 @@
 
 .dark-heresy.chat button {
     width: 45%;
-    height: 25px;
+    height: auto; /* long labels wrap instead of being clipped */
+    min-height: 25px;
+    line-height: 20px;
+    padding: 2px 4px;
     background: #641414;
     color: var(--color-title);
     font-family: var(--font-text);
