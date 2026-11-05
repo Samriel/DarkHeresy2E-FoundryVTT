@@ -229,6 +229,18 @@ CONFIG.statusEffects = [
         img: "systems/dark-heresy/asset/icons/stunned.png"
     },
     {
+        id: "helpless",
+        statuses: ["helpless"],
+        name: "CONDITION.HELPLESS",
+        img: "icons/svg/paralysis.svg"
+    },
+    {
+        id: "surprised",
+        statuses: ["surprised"],
+        name: "CONDITION.SURPRISED",
+        img: "icons/svg/daze.svg"
+    },
+    {
         id: "unconscious",
         statuses: ["unconscious"],
         name: "CONDITION.UNCONSCIOUS",

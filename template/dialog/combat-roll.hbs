@@ -41,6 +41,12 @@
                     </select>
                 </div>
             {{/if}}
+            <div class="wrapper called-shot-location">
+                <label>{{localize "DIALOG.CALLED_SHOT_LOCATION"}}</label>
+                <select id="calledShot">
+                    {{selectOptions (config "hitLocations") selected="body" localize=true}}
+                </select>
+            </div>
             <div class="separator"></div>
         {{/unless}}
         <div class="wrapper">

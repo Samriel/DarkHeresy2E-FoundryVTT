@@ -30,7 +30,10 @@ const KEYS = {
     concussive: /^(?:оглуш|concussive)/i,
     toxic: /^(?:токсичн|toxic)/i,
     shocking: /^(?:шоков|shocking)/i,
-    haywire: /^(?:эми|haywire)/i
+    haywire: /^(?:эми|haywire)/i,
+    reliable: /^(?:над[её]жн|reliable)/i,
+    unreliable: /^(?:ненад[её]жн|unreliable)/i,
+    overheats: /^(?:перегрев|overheat)/i
 };
 
 const REMINDERS = ["hallucinogenic", "flame", "crippling", "corrosive", "snare", "concussive", "toxic", "shocking", "haywire"];
@@ -134,5 +137,9 @@ export function registerQualities() {
     game.darkHeresy.registerQualityTexts = registerQualityTexts;
     game.darkHeresy.parseQualities = parseQualities;
     Handlebars.registerHelper("dhQualities", special => new Handlebars.SafeString(qualitiesHTML(special)));
-    Handlebars.registerHelper("dhReminders", special => new Handlebars.SafeString(reminderHTML(special)));
+    // Empty string (falsy) when there is nothing to remind, so {{#if (dhReminders …)}} works
+    Handlebars.registerHelper("dhReminders", special => {
+        const html = reminderHTML(special);
+        return html ? new Handlebars.SafeString(html) : "";
+    });
 }

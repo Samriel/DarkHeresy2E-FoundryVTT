@@ -1,5 +1,6 @@
 import { blastArea, sprayArea, sprayJammed } from "./area.js";
 import { qualityValue } from "./qualities.js";
+import { checkWeaponJam, setSprayJam } from "./weapons.js";
 
 /**
  * Roll a generic roll, and post the result to chat.
@@ -32,12 +33,18 @@ export async function combatRoll(rollData) {
         rollData.attackResult = 5; // Attacks that skip the hit roll always hit body; 05 reversed 50 = body
         rollData.flags.isDamageRoll = true;
         await _rollDamage(rollData);
-        if (rollData.weapon.traits.spray) rollData.sprayJam = sprayJammed(rollData.damages);
+        // Reliable weapons with Spray never jam (core p. 179)
+        if (rollData.weapon.traits.spray) {
+            rollData.sprayJam = !qualityValue(special, "reliable") && sprayJammed(rollData.damages);
+            if (rollData.sprayJam) await setSprayJam(rollData);
+        }
         await _updateRangedAmmo(rollData);
         await sendDamageToChat(rollData);
     } else {
         await _computeCombatTarget(rollData);
         await _rollTarget(rollData);
+        _applyHelplessTarget(rollData);
+        await checkWeaponJam(rollData);
         rollData.attackDos = rollData.dos;
         rollData.attackResult = rollData.result;
         if (!rollData.isReRoll) {
@@ -50,9 +57,22 @@ export async function combatRoll(rollData) {
             rollData.shotsFired,
             rollData.weapon.traits);
         const blast = Number(qualityValue(special, "blast")) || 0;
-        if (blast && !rollData.flags.isEvasion) rollData.area = await blastArea(rollData, blast);
+        if (blast && !rollData.flags.isEvasion && !rollData.weaponJam?.jammed) rollData.area = await blastArea(rollData, blast);
         await _sendRollToChat(rollData);
     }
+}
+
+/**
+ * Melee attack against a helpless target: automatic success with degrees of success equal to the
+ * Weapon Skill bonus (core p. 283). The d100 still decides the hit location.
+ * @param {object} rollData
+ */
+function _applyHelplessTarget(rollData) {
+    if (!rollData.helplessTarget || !rollData.weapon?.isMelee) return;
+    const actor = game.actors.get(rollData.ownerId);
+    rollData.flags.isSuccess = true;
+    rollData.dof = 0;
+    rollData.dos = Math.max(1, Number(actor?.characteristics?.weaponSkill?.bonus) || 1);
 }
 
 /**
@@ -171,6 +191,10 @@ async function _rollDamage(rollData) {
     if (rollData.weapon.damageFormula) {
         formula = rollData.weapon.damageFormula;
 
+        // Helpless target: roll the damage dice twice and add the results (core p. 283)
+        if (rollData.helplessTarget && rollData.weapon.isMelee) {
+            formula = formula.replace(/(\d*)d(\d+)/i, (m, n, faces) => `${(Number(n) || 1) * 2}d${faces}`);
+        }
         if (rollData.weapon.traits.tearing) {
             formula = _appendTearing(formula);
         }
@@ -195,7 +219,9 @@ async function _rollDamage(rollData) {
         rollData.aim?.isAiming,
         rollData.weapon.traits
     );
-    const firstLocation = _getLocation(rollData.attackResult);
+    // Called shot: the hit goes to the chosen location (core p. 269)
+    const firstLocation = (rollData.attackType?.name === "called_shot" && rollData.calledShot)
+        ? rollData.calledShot : _getLocation(rollData.attackResult);
     firstHit.location = firstLocation;
     rollData.damages.push(firstHit);
 
@@ -560,6 +586,10 @@ function _getDegree(a, b) {
  * @param {*} rollData
  * @returns {string}
  */
+export function replaceSymbols(formula, rollData) {
+    return _replaceSymbols(formula, rollData);
+}
+
 function _replaceSymbols(formula, rollData) {
     let actor = game.actors.get(rollData.ownerId);
     let attributeBoni = actor.attributeBoni;

@@ -31,6 +31,9 @@ import { registerActions } from "./common/actions.js";
 import { registerTraits } from "./common/traits.js";
 import { registerQualities } from "./common/qualities.js";
 import { registerAreas } from "./common/area.js";
+import { registerWeapons } from "./common/weapons.js";
+import { replaceSymbols } from "./common/roll.js";
+import DarkHeresyUtil from "./common/util.js";
 import DhMacroUtil from "./common/macro.js";
 import Dh from "./common/config.js";
 
@@ -61,6 +64,8 @@ Hooks.once("init", function() {
         }
     };
     registerQualities();
+    registerWeapons({ prepareCommonRoll, replaceSymbols,
+        createCharacteristicRollData: (actor, key) => DarkHeresyUtil.createCharacteristicRollData(actor, key) });
     game.macro = DhMacroUtil;
     const sheets = foundry.applications.apps.DocumentSheetConfig;
     sheets.unregisterSheet(Actor, "core", foundry.appv1.sheets.ActorSheet);

@@ -8,8 +8,30 @@
  * - Shooting into melee: −20 when another token of a different disposition stands next to the target.
  * - Prone target: +10 to melee attacks, −10 to ranged attacks except at point blank.
  * - Target size (table 4-6), see traits.js.
+ * - Stunned target: +20 (p. 284). Unaware (surprised) target: +30 (p. 285). Helpless target
+ *   (unconscious or helpless): melee attacks succeed automatically with degrees of success equal to
+ *   the Weapon Skill bonus and roll the damage dice twice (p. 283); prone and stunned targets are not
+ *   helpless by themselves. Shooting into melee ignores −20 if anyone in that melee is stunned,
+ *   helpless or unaware (p. 283).
+ * - Weapon Training: −20 without the talent for the weapon (weapons.js), with or without a target.
  */
 import { sizeHitModifier } from "./traits.js";
+import { applyTrainingModifier } from "./weapons.js";
+
+// Token statuses (CONFIG.statusEffects ids)
+const HELPLESS = ["unconscious", "helpless"];
+const UNAWARE = ["surprised"];
+
+const hasStatus = (actor, ids) => ids.some(id => actor?.statuses?.has(id));
+
+/**
+ * Is a token stunned, helpless or unaware (cancels the shooting-into-melee penalty)?
+ * @param {Token} token
+ * @returns {boolean}
+ */
+function defenceless(token) {
+    return hasStatus(token.actor, ["stunned", ...HELPLESS, ...UNAWARE]);
+}
 
 const BANDS = [
     { mod: 30, key: "RANGE.POINT_BLANK" },
@@ -58,7 +80,8 @@ export function rangeBand(dist, range, engaged) {
  * @returns {string[]} notes for the dialog
  */
 export function applySituationalModifiers(rollData, actor) {
-    const notes = [];
+    const notes = applyTrainingModifier(rollData, actor);
+    delete rollData.helplessTarget;
     const target = game.user.targets.size === 1 ? [...game.user.targets][0] : null;
     if (!target?.actor || !canvas.ready) return notes;
     const attacker = canvas.tokens.controlled.find(t => t.actor?.id === actor?.id)
@@ -72,6 +95,18 @@ export function applySituationalModifiers(rollData, actor) {
     }
 
     const prone = target.actor.statuses?.has("prone");
+    if (hasStatus(target.actor, ["stunned"])) {
+        modifier += 20;
+        notes.push(game.i18n.format("TARGET_STATE.STUNNED_NOTE", { name: target.name }));
+    }
+    if (hasStatus(target.actor, UNAWARE)) {
+        modifier += 30;
+        notes.push(game.i18n.format("TARGET_STATE.UNAWARE_NOTE", { name: target.name }));
+    }
+    if (hasStatus(target.actor, HELPLESS) && rollData.weapon.isMelee) {
+        rollData.helplessTarget = true;
+        notes.push(game.i18n.format("TARGET_STATE.HELPLESS_NOTE", { name: target.name }));
+    }
     if (attacker && attacker !== target) {
         const dist = distance(attacker, target);
         const engaged = adjacent(attacker, target);
@@ -83,9 +118,11 @@ export function applySituationalModifiers(rollData, actor) {
                     band: game.i18n.localize(band.key), modifier: signed(band.mod) }));
             }
             // Another token of a different side next to the target (the attacker does not count)
-            const melee = canvas.tokens.placeables.some(t => t !== target && t !== attacker && !t.document.hidden
+            const engagedWith = canvas.tokens.placeables.filter(t => t !== target && t !== attacker && !t.document.hidden
                 && t.document.disposition !== target.document.disposition && adjacent(t, target));
-            if (melee) {
+            if (engagedWith.length && [target, ...engagedWith].some(defenceless)) {
+                notes.push(game.i18n.localize("RANGE.INTO_MELEE_IGNORED_NOTE"));
+            } else if (engagedWith.length) {
                 modifier -= 20;
                 notes.push(game.i18n.localize("RANGE.INTO_MELEE_NOTE"));
             }

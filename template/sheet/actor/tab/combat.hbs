@@ -145,6 +145,9 @@
                                 <div class="image" style="background-image: url('{{item.img}}')"></div>
                             </div>
                             <button class="roll-weapon" type="button">{{item.name}}</button>
+                            {{#if item.flags.[dark-heresy].jammed}}
+                                <a class="sheet-unjam" data-tooltip="{{localize "WEAPON_JAM.UNJAM"}}" style="color: var(--color-failure); flex: 0 0 auto; margin-left: 4px"><i class="fas fa-triangle-exclamation"></i></a>
+                            {{/if}}
                         </div>
                         <div class="class">{{item.WeaponClass}}</div>
                         <div class="range">{{item.range}}</div>

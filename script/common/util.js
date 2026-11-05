@@ -56,6 +56,7 @@ export default class DarkHeresyUtil {
         let rollData = this.createCommonAttackRollData(actor, weaponItem);
 
         rollData.target.base = characteristic.total + weaponItem.attack;
+        rollData.weaponUuid = weaponItem.uuid; // the token actor's item for unlinked tokens
         rollData.rangeMod = !isMelee ? 10 : 0;
 
         rollData.weapon = foundry.utils.mergeObject(rollData.weapon, {

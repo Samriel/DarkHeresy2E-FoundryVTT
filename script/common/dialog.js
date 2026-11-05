@@ -1,5 +1,6 @@
 import { commonRoll, combatRoll, reportEmptyClip } from "./roll.js";
 import { applySituationalModifiers } from "./situational.js";
+import { weaponReady } from "./weapons.js";
 
 /**
  * Show a generic roll dialog.
@@ -60,6 +61,9 @@ export async function prepareCommonRoll(rollData) {
  * @param {DarkHeresyActor} actorRef
  */
 export async function prepareCombatRoll(rollData, actorRef) {
+    actorRef ??= game.actors.get(rollData.ownerId);
+    // A jammed weapon offers to clear the jam instead, an overheated one is cooling down
+    if (!weaponReady(rollData, actorRef)) return;
     if (rollData.weapon.isRange && rollData.weapon.clip.value <= 0) {
         reportEmptyClip(rollData);
     } else {
@@ -89,6 +93,9 @@ export async function prepareCombatRoll(rollData, actorRef) {
                             text: attackType?.options[attackType.selectedIndex].text,
                             modifier: 0
                         };
+                        const calledShot = html.find("#calledShot")[0];
+                        rollData.calledShot = attackType?.value === "called_shot" && calledShot
+                            ? game.darkHeresy.config.hitLocations[calledShot.value] : null;
 
                         const aim = html.find("#aim")[0];
                         rollData.aim = {
@@ -127,7 +134,15 @@ export async function prepareCombatRoll(rollData, actorRef) {
                 }
             },
             default: "roll",
-            close: () => {}
+            close: () => {},
+            render: html => {
+                // Called shot: show the hit location choice
+                const type = html.find("#attackType");
+                const location = html.find(".called-shot-location");
+                const toggle = () => location.toggle(type.val() === "called_shot");
+                type.on("change", toggle);
+                toggle();
+            }
         }, {width: 200});
         dialog.render(true);
     }

@@ -29,6 +29,36 @@
         {{#if attackType}}
             <p><strong>{{localize "CHAT.ATTACK_TYPE"}}:</strong> {{attackType.text}}</p>
         {{/if}}
+        {{#if calledShot}}
+            <p><strong>{{localize "DIALOG.CALLED_SHOT_LOCATION"}}:</strong> {{localize calledShot}}</p>
+        {{/if}}
+        {{#if helplessTarget}}
+            <p><em>{{localize "TARGET_STATE.HELPLESS_CHAT"}}</em></p>
+        {{/if}}
+        {{#if untrained}}
+            <p><em>{{localize "WEAPON_TRAINING.CHAT"}}</em></p>
+        {{/if}}
+        {{#if weaponJam.jammed}}
+            <p><strong style="color: var(--color-failure)">{{#if weaponJam.canUnjam}}{{localize "WEAPON_JAM.JAMMED"}}{{else}}{{localize "WEAPON_JAM.JAMMED_SPENT"}}{{/if}}</strong></p>
+            {{#if weaponJam.misfire}}
+                <p><strong>{{localize "WEAPON_JAM.MISFIRE"}} ({{weaponJam.misfire.result}}):</strong>
+                {{#if weaponJam.misfire.detonated}}{{#if weaponJam.misfire.launcher}}{{localize "WEAPON_JAM.MISFIRE_LAUNCHER"}}{{else}}{{localize "WEAPON_JAM.MISFIRE_GRENADE"}}{{/if}}{{else}}{{localize "WEAPON_JAM.MISFIRE_DUD"}}{{/if}}</p>
+            {{/if}}
+            {{#if weaponJam.canUnjam}}
+            <div class="wrapper flex-column"><button class="weapon-unjam">{{localize "WEAPON_JAM.UNJAM"}}</button></div>
+            {{/if}}
+        {{/if}}
+        {{#if weaponJam.overheated}}
+            <p><strong style="color: var(--color-failure)">{{localize "WEAPON_JAM.OVERHEATED"}}</strong></p>
+            <div class="wrapper flex-column"><button class="weapon-overheat-damage">{{localize "WEAPON_JAM.OVERHEAT_DAMAGE"}}</button></div>
+        {{/if}}
+        {{#if unjam}}
+            {{#if flags.isSuccess}}
+            <p><strong>{{localize "WEAPON_JAM.UNJAMMED"}}</strong></p>
+            {{else}}
+            <p><strong style="color: var(--color-failure)">{{localize "WEAPON_JAM.STILL_JAMMED"}}</strong></p>
+            {{/if}}
+        {{/if}}
 
         {{#if flags.isSuccess}}
             <p><strong>{{localize "CHAT.DOS"}}:</strong> {{dos}}</p>

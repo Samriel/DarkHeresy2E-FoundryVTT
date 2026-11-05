@@ -96,6 +96,11 @@ async function onChatMessage(message) {
         await update(combatant, { reaction: true });
         return;
     }
+    // Other tests that take an action (clearing a jam: Full Action, core p. 277)
+    if (rollData.halfActions && combatant === game.combat.combatant) {
+        await update(combatant, { attack: a.attack + rollData.halfActions });
+        return;
+    }
     if (!rollData.flags.isCombatRoll || combatant !== game.combat.combatant) return;
     if (rollData.psy?.display) {
         await update(combatant, { attack: a.attack + powerCost(rollData.powerAction) });

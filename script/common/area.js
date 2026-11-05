@@ -12,18 +12,12 @@
  * when the same user makes the next area attack.
  */
 
+import { isTrained } from "./weapons.js";
+
 const SOCKET = "system.dark-heresy";
 
 // Direction diagram (core p. 284): angle in degrees from the attacker→target line, clockwise
 const SCATTER_ANGLE = { 1: -45, 2: 0, 3: 45, 4: -90, 5: 90, 6: -135, 7: -135, 8: 180, 9: 135, 10: 135 };
-
-// Weapon type → Weapon Training specialisation (Russian and English)
-const TRAINING = {
-    bolt: /болтер|bolt/i, chain: /цепн|chain/i, flame: /зажиг|огн|flame/i, heavy: /тяж|heavy/i,
-    las: /лазер|las/i, launcher: /пусков|launcher/i, melta: /мельт|melta/i, plasma: /плазм|plasma/i,
-    power: /силов|power/i, lowtech: /низкотех|low.?tech/i, shock: /шоков|shock/i,
-    solidprojectile: /твёрдотел|твердотел|solid/i
-};
 
 const metresToPixels = metres => metres * canvas.dimensions.size / canvas.dimensions.distance;
 
@@ -147,11 +141,9 @@ export async function sprayArea(rollData) {
  */
 export function sprayDodgeBonus(rollData) {
     const attacker = game.actors.get(rollData.ownerId);
-    const type = attacker?.items.get(rollData.itemId)?.system?.type;
-    const re = TRAINING[type];
-    if (!attacker || !re) return 0;
-    const trained = attacker.items.some(i => i.type === "talent" && /выучка с оружием|weapon training/i.test(i.name) && re.test(i.name));
-    return trained ? 0 : 20;
+    const weapon = attacker?.items.get(rollData.itemId);
+    if (!attacker || weapon?.type !== "weapon") return 0;
+    return isTrained(attacker, weapon) ? 0 : 20;
 }
 
 /**
