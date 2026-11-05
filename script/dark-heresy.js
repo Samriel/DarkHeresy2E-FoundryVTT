@@ -32,6 +32,8 @@ import { registerTraits } from "./common/traits.js";
 import { registerQualities } from "./common/qualities.js";
 import { registerAreas } from "./common/area.js";
 import { registerWeapons } from "./common/weapons.js";
+import { registerOps } from "./common/ops.js";
+import { registerConditions } from "./common/conditions.js";
 import { replaceSymbols } from "./common/roll.js";
 import DarkHeresyUtil from "./common/util.js";
 import { registerTablesApi, registerTablesSocket } from "./common/tables.js";
@@ -70,7 +72,8 @@ Hooks.once("init", function() {
         firstAid,
         requisition,
         subtletyPanel,
-        subtletyTest
+        subtletyTest,
+        util: DarkHeresyUtil
     };
     registerQualities();
     registerWeapons({ prepareCommonRoll, replaceSymbols,
@@ -80,6 +83,9 @@ Hooks.once("init", function() {
     registerMedicae();
     registerRequisition();
     registerCorruption();
+    registerOps();
+    registerConditions({ prepareCommonRoll,
+        createCharacteristicRollData: (actor, key) => DarkHeresyUtil.createCharacteristicRollData(actor, key) });
     game.macro = DhMacroUtil;
     const sheets = foundry.applications.apps.DocumentSheetConfig;
     sheets.unregisterSheet(Actor, "core", foundry.appv1.sheets.ActorSheet);

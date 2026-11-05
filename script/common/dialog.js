@@ -2,12 +2,15 @@ import { commonRoll, combatRoll, reportEmptyClip } from "./roll.js";
 import { applySituationalModifiers } from "./situational.js";
 import { weaponReady } from "./weapons.js";
 import { SUPPRESSION, canSuppress, applyPinnedPenalty } from "./pinning.js";
+import { applyOwnConditions, rollActor } from "./conditions.js";
 
 /**
  * Show a generic roll dialog.
  * @param {object} rollData
  */
 export async function prepareCommonRoll(rollData) {
+    // Prone, pinned, guarded action… of the roller himself (re-rolls keep the modifier already applied)
+    if (rollData.target && !rollData.flags?.isReRoll) rollData.autoNotes = applyOwnConditions(rollData, rollActor(rollData));
     const html = await foundry.applications.handlebars.renderTemplate("systems/dark-heresy/template/dialog/common-roll.hbs", rollData);
     let dialog = new Dialog({
         title: game.i18n.localize(rollData.name),
@@ -70,9 +73,11 @@ export async function prepareCombatRoll(rollData, actorRef) {
     } else {
         const attacker = actorRef ?? game.actors.get(rollData.ownerId);
         const pinnedNotes = applyPinnedPenalty(rollData, attacker);
+        // Conditions of the attacker himself (prone, guarded action…)
+        const ownNotes = applyOwnConditions(rollData, rollActor(rollData) ?? attacker);
         const plain = { modifier: rollData.target.modifier };
         // Range band, size, shooting into melee and prone target of the single targeted token
-        rollData.autoNotes = [...pinnedNotes, ...applySituationalModifiers(rollData, attacker)];
+        rollData.autoNotes = [...pinnedNotes, ...ownNotes, ...applySituationalModifiers(rollData, attacker)];
         const situational = { modifier: rollData.target.modifier, range: rollData.rangeMod };
         // Only the attack types the weapon's rate of fire allows (S/B/F); suppressing fire likewise
         // roll data carries only burst/full; the single-shot rate is on the weapon item

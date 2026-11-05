@@ -14,6 +14,7 @@
  */
 
 import { isTrained } from "./weapons.js";
+import { confirmEvasion } from "./conditions.js";
 
 const SOCKET = "system.dark-heresy";
 
@@ -186,7 +187,7 @@ export async function deleteAreas(filter) {
 }
 
 /** Spray dodge button: Agility test for the user's token, linked to the damage card. */
-export function onSprayDodgeClick(event, prepareCommonRoll, DarkHeresyUtil) {
+export async function onSprayDodgeClick(event, prepareCommonRoll, DarkHeresyUtil) {
     event.preventDefault();
     const id = event.currentTarget.closest(".message")?.dataset.messageId;
     const message = game.messages.get(id);
@@ -197,6 +198,7 @@ export function onSprayDodgeClick(event, prepareCommonRoll, DarkHeresyUtil) {
         ui.notifications.warn(game.i18n.localize("NOTIFICATION.MACRO_ACTOR_NOT_FOUND"));
         return;
     }
+    if (!(await confirmEvasion(actor, rollData))) return;
     const token = canvas.tokens.controlled.find(t => t.actor === actor) ?? canvas.tokens.placeables.find(t => t.actor === actor);
     const dodge = DarkHeresyUtil.createCharacteristicRollData(actor, "agility");
     dodge.target.modifier = sprayDodgeBonus(rollData);

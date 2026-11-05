@@ -29,6 +29,9 @@
             <label>{{localize "DIALOG.MODIFIER"}}</label>
             <input id="modifier" type="text" value="{{target.modifier}}" />
         </div>
+        {{#each autoNotes}}
+            <div class="wrapper" style="flex-basis: 100%"><em>{{this}}</em></div>
+        {{/each}}
     </div>
 </div>
 <script>

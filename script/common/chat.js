@@ -9,6 +9,7 @@ import { onApplyConditionClick, onPhenomenaClick } from "./tables.js";
 import { onPinningClick, onPinningRecoverClick } from "./pinning.js";
 import { onBleedingClick } from "./medicae.js";
 import { onMindTestClick } from "./corruption.js";
+import { confirmEvasion } from "./conditions.js";
 
 
 /**
@@ -116,7 +117,7 @@ function rerollTest(rollData) {
  * Rolls a Test for the Selected Actor
  * @param {Event} ev
  */
-function onTestClick(ev) {
+async function onTestClick(ev) {
     let actor = game.macro.getActor();
     let id = $(ev.currentTarget).parents(".message").attr("data-message-id");
     let msg = game.messages.get(id);
@@ -126,6 +127,9 @@ function onTestClick(ev) {
         ui.notifications.warn(`${game.i18n.localize("NOTIFICATION.MACRO_ACTOR_NOT_FOUND")}`);
         return;
     }
+    // Stunned, grappled, after an All Out Attack, reaction spent, feinted… (core pp. 269–270, 281, 289)
+    if (!(await confirmEvasion(actor, rollData))) return;
+    rollData.evaderUuid = actor.uuid;
     let evasions = {
         dodge: DarkHeresyUtil.createSkillRollData(actor, "dodge"),
         parry: DarkHeresyUtil.createSkillRollData(actor, "parry"),

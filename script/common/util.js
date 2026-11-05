@@ -5,6 +5,7 @@ export default class DarkHeresyUtil {
             name: item.name,
             itemName: item.name, // Seperately here because evasion may override it
             ownerId: actor.id,
+            actorUuid: actor.uuid, // the token actor for unlinked tokens
             itemId: item.id,
             target: {
                 base: 0,
@@ -37,7 +38,8 @@ export default class DarkHeresyUtil {
             flags: {
                 isAttack: false
             },
-            ownerId: actor.id
+            ownerId: actor.id,
+            actorUuid: actor.uuid // the token actor for unlinked tokens
         };
     }
 
@@ -129,7 +131,8 @@ export default class DarkHeresyUtil {
     static createCharacteristicRollData(actor, characteristicName) {
         const characteristic = actor.characteristics[characteristicName];
         return foundry.utils.mergeObject(this.createCommonNormalRollData(actor, characteristic), {
-            name: characteristic.label
+            name: characteristic.label,
+            characteristicKey: characteristicName
         });
     }
 
