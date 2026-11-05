@@ -125,7 +125,7 @@ async function announceFear(combat) {
         if (!rating) continue;
         fresh.push(c.id);
         const modifier = FEAR_MODIFIER[Math.min(rating, 4)] ?? -30;
-        const content = await renderTemplate("systems/dark-heresy/template/chat/fear.hbs",
+        const content = await foundry.applications.handlebars.renderTemplate("systems/dark-heresy/template/chat/fear.hbs",
             { name: c.token?.name ?? c.actor.name, rating, modifier, modifierText: modifier >= 0 ? `+${modifier}` : `${modifier}` });
         await ChatMessage.create({ content, flags: { "dark-heresy.fear": { rating, modifier, name: c.token?.name ?? c.actor.name } } });
     }

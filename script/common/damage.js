@@ -129,7 +129,7 @@ async function rollForceField(actor, request) {
     const blocked = roll.total <= rating;
     const overloaded = roll.total <= overload;
     if (overloaded) await field.update({ "system.overloaded": true, "system.active": false });
-    const content = await renderTemplate("systems/dark-heresy/template/chat/force-field.hbs", {
+    const content = await foundry.applications.handlebars.renderTemplate("systems/dark-heresy/template/chat/force-field.hbs", {
         target: actor.name, field: field.name, source: request.source, result: roll.total,
         rating, overload, blocked, overloaded
     });

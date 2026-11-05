@@ -1,4 +1,4 @@
-export class DarkHeresyItemSheet extends ItemSheet {
+export class DarkHeresyItemSheet extends foundry.appv1.sheets.ItemSheet {
     activateListeners(html) {
         super.activateListeners(html);
         html.find("input").focusin(ev => this._onFocusIn(ev));
@@ -21,8 +21,8 @@ export class DarkHeresyItemSheet extends ItemSheet {
 
     async _handleEnrichment() {
         let enrichment = {};
-        enrichment["system.description"] = await TextEditor.enrichHTML(this.item.system.description, { async: true });
-        enrichment["system.effect"] = await TextEditor.enrichHTML(this.item.system.effect, { async: true });
+        enrichment["system.description"] = await foundry.applications.ux.TextEditor.implementation.enrichHTML(this.item.system.description, { async: true });
+        enrichment["system.effect"] = await foundry.applications.ux.TextEditor.implementation.enrichHTML(this.item.system.effect, { async: true });
         return foundry.utils.expandObject(enrichment);
     }
 
@@ -63,7 +63,7 @@ export class DarkHeresyItemSheet extends ItemSheet {
                         name: game.i18n.format("DOCUMENT.New", {
                             type: game.i18n.localize("DOCUMENT.ActiveEffect")
                         }),
-                        icon: "icons/svg/aura.svg",
+                        img: "icons/svg/aura.svg",
                         origin: owner.uuid,
                         "duration.rounds":
                             li.dataset.effectType === "temporary" ? 1 : undefined,

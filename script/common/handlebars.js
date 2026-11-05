@@ -75,7 +75,7 @@ function registerHandlebarsHelpers() {
     });
 
     Handlebars.registerHelper("enrich", function(string) {
-        return TextEditor.enrichHTML(string, { async: false });
+        return foundry.applications.ux.TextEditor.implementation.enrichHTML(string, { async: false });
     });
 
     Handlebars.registerHelper("damageTypeLong", function(damageType) {

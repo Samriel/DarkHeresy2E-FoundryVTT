@@ -6,7 +6,7 @@ export const migrateWorld = async () => {
         for (let actor of game.actors.contents) {
             try {
                 const update = migrateActorData(actor, worldSchemaVersion);
-                if (!isObjectEmpty(update)) {
+                if (!foundry.utils.isEmpty(update)) {
                     await actor.update(update, {enforceTypes: false});
                 }
             } catch(e) {
@@ -146,17 +146,17 @@ export const migrateCompendium = async function(pack, worldSchemaVersion) {
     const entity = pack.metadata.type;
 
     await pack.migrate();
-    const content = await pack.getContent();
+    const content = await pack.getDocuments();
 
     for (let ent of content) {
-        let updateData = {};
-        if (entity === "Actor") {
-            updateData = migrateActorData(ent, worldSchemaVersion);
-        }
-        if (!isObjectEmpty(updateData)) {
-            foundry.utils.expandObject(updateData);
-            updateData._id = ent.id;
-            await pack.updateEntity(updateData);
+        try {
+            let updateData = {};
+            if (entity === "Actor") {
+                updateData = migrateActorData(ent, worldSchemaVersion);
+            }
+            if (!foundry.utils.isEmpty(updateData)) await ent.update(updateData, {enforceTypes: false});
+        } catch(e) {
+            console.error(e);
         }
     }
 };

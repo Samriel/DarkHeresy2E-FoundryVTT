@@ -1,6 +1,6 @@
 export class DarkHeresyItem extends Item {
     async sendToChat() {
-        const html = await renderTemplate("systems/dark-heresy/template/chat/item.hbs", { item: this, data: this.system });
+        const html = await foundry.applications.handlebars.renderTemplate("systems/dark-heresy/template/chat/item.hbs", { item: this, data: this.system });
         const chatData = {
             user: game.user.id,
             rollMode: game.settings.get("core", "rollMode"),

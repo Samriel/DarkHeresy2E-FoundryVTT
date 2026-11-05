@@ -31,6 +31,7 @@ export function chatListeners(html) {
  * @returns {Array}              The extended options Array including new context choices
  */
 export const addChatMessageContextOptions = function(html, options) {
+    const applyDamage = li => applyToActors(game.messages.get(li.dataset.messageId), canvas.tokens.controlled);
     let canApply = li => {
         const message = game.messages.get(li.dataset.messageId);
         return message.getRollData()?.flags.isDamageRoll
@@ -39,13 +40,18 @@ export const addChatMessageContextOptions = function(html, options) {
     };
     options.unshift(
         {
+            // v14 keys (label/visible/onClick); name/condition/callback keep v13 working
+            label: game.i18n.localize("CHAT.CONTEXT.APPLY_DAMAGE"),
             name: game.i18n.localize("CHAT.CONTEXT.APPLY_DAMAGE"),
             icon: '<i class="fas fa-user-minus"></i>',
+            visible: canApply,
             condition: canApply,
-            callback: li => applyToActors(game.messages.get(li.dataset.messageId), canvas.tokens.controlled)
+            onClick: (event, li) => applyDamage(li),
+            callback: li => applyDamage(li)
         }
     );
 
+    const reroll = li => rerollTest(game.messages.get(li.dataset.messageId).getRollData());
     let canReroll = li => {
         const message = game.messages.get(li.dataset.messageId);
         let actor = game.actors.get(message.getRollData()?.ownerId);
@@ -57,13 +63,13 @@ export const addChatMessageContextOptions = function(html, options) {
 
     options.unshift(
         {
+            label: game.i18n.localize("CHAT.CONTEXT.REROLL"),
             name: game.i18n.localize("CHAT.CONTEXT.REROLL"),
             icon: '<i class="fa-solid fa-repeat"></i>',
+            visible: canReroll,
             condition: canReroll,
-            callback: li => {
-                const message = game.messages.get(li.dataset.messageId);
-                rerollTest(message.getRollData());
-            }
+            onClick: (event, li) => reroll(li),
+            callback: li => reroll(li)
         }
     );
     return options;

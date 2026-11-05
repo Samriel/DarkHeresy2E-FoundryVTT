@@ -6,7 +6,7 @@ import { applySituationalModifiers } from "./situational.js";
  * @param {object} rollData
  */
 export async function prepareCommonRoll(rollData) {
-    const html = await renderTemplate("systems/dark-heresy/template/dialog/common-roll.hbs", rollData);
+    const html = await foundry.applications.handlebars.renderTemplate("systems/dark-heresy/template/dialog/common-roll.hbs", rollData);
     let dialog = new Dialog({
         title: game.i18n.localize(rollData.name),
         content: html,
@@ -65,7 +65,7 @@ export async function prepareCombatRoll(rollData, actorRef) {
     } else {
         // Range band, size, shooting into melee and prone target of the single targeted token
         rollData.autoNotes = applySituationalModifiers(rollData, actorRef ?? game.actors.get(rollData.ownerId));
-        const html = await renderTemplate("systems/dark-heresy/template/dialog/combat-roll.hbs", rollData);
+        const html = await foundry.applications.handlebars.renderTemplate("systems/dark-heresy/template/dialog/combat-roll.hbs", rollData);
         let dialog = new Dialog({
             title: rollData.name,
             content: html,
@@ -138,7 +138,7 @@ export async function prepareCombatRoll(rollData, actorRef) {
  * @param {object} rollData
  */
 export async function preparePsychicPowerRoll(rollData) {
-    const html = await renderTemplate("systems/dark-heresy/template/dialog/psychic-power-roll.hbs", rollData);
+    const html = await foundry.applications.handlebars.renderTemplate("systems/dark-heresy/template/dialog/psychic-power-roll.hbs", rollData);
     let dialog = new Dialog({
         title: rollData.name,
         content: html,

@@ -92,7 +92,7 @@ async function _computeCombatTarget(rollData) {
         psyModifier = (rollData.psy.rating - rollData.psy.value) * 10;
         rollData.psy.push = psyModifier < 0;
         if (rollData.psy.push && rollData.psy.warpConduit) {
-            let ratingBonus = new Roll("1d5").evaluate({ async: false }).total;
+            const ratingBonus = (await new Roll("1d5").evaluate()).total;
             rollData.psy.value += ratingBonus;
         }
     }
@@ -635,9 +635,9 @@ async function _sendRollToChat(rollData) {
 
     let html;
     if (rollData.flags.isEvasion) {
-        html = await renderTemplate("systems/dark-heresy/template/chat/evasion.hbs", rollData);
+        html = await foundry.applications.handlebars.renderTemplate("systems/dark-heresy/template/chat/evasion.hbs", rollData);
     } else {
-        html = await renderTemplate("systems/dark-heresy/template/chat/roll.hbs", rollData);
+        html = await foundry.applications.handlebars.renderTemplate("systems/dark-heresy/template/chat/roll.hbs", rollData);
     }
     chatData.content = html;
 
@@ -670,7 +670,7 @@ export async function sendDamageToChat(rollData) {
 
     chatData.rolls = rollData.damages.flatMap(r => r.damageRoll);
 
-    const html = await renderTemplate("systems/dark-heresy/template/chat/damage.hbs", rollData);
+    const html = await foundry.applications.handlebars.renderTemplate("systems/dark-heresy/template/chat/damage.hbs", rollData);
     chatData.content = html;
 
     if (["gmroll", "blindroll"].includes(chatData.rollMode)) {
@@ -689,7 +689,7 @@ export async function sendDamageToChat(rollData) {
 async function _emptyClipToChat(rollData) {
     let chatData = {
         user: game.user.id,
-        content: await renderTemplate("systems/dark-heresy/template/chat/emptyMag.hbs", rollData),
+        content: await foundry.applications.handlebars.renderTemplate("systems/dark-heresy/template/chat/emptyMag.hbs", rollData),
         flags: {
             "dark-heresy.rollData": rollData
         }

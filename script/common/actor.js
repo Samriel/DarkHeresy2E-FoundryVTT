@@ -546,7 +546,7 @@ export class DarkHeresyActor extends Actor {
      */
     async _showCritMessage(rolls, target, totalWounds, totalCritWounds, special = "") {
         if (rolls.length === 0) return;
-        const html = await renderTemplate("systems/dark-heresy/template/chat/critical.hbs", {
+        const html = await foundry.applications.handlebars.renderTemplate("systems/dark-heresy/template/chat/critical.hbs", {
             rolls,
             target,
             totalWounds,
@@ -570,41 +570,23 @@ export class DarkHeresyActor extends Actor {
     }
 
     async addCondition(effect, options={}) {
-        if (typeof (effect) === "string") effect = CONFIG.statusEffects.find(e => e.id === effect);
-        if (!effect) return "No Effect Found";
-        else effect = duplicate(effect);
-
-        if (!effect.id) return "Conditions require an id field";
-
-
-        let existing = this.hasCondition(effect.id);
-
-        if (!existing) {
-            effect.label = game.i18n.localize(effect.label);
-            effect["flags.core.statusId"] = effect.id;
-            effect.origin = options.origin || "";
-            delete effect.id;
-            return this.createEmbeddedDocuments("ActiveEffect", [effect]);
-        }
+        const id = typeof effect === "string" ? effect : effect?.id;
+        if (!CONFIG.statusEffects.some(e => e.id === id)) return "No Effect Found";
+        if (this.hasCondition(id)) return;
+        const created = await ActiveEffect.implementation.fromStatusEffect(id, { parent: this });
+        if (options.origin) created.updateSource({ origin: options.origin });
+        return ActiveEffect.implementation.create(created.toObject(), { parent: this, keepId: true });
     }
 
     async removeCondition(effect) {
-        if (typeof (effect) === "string") effect = CONFIG.statusEffects.find(e => e.id === effect);
-        if (!effect) return "No Effect Found";
-        else effect = duplicate(effect);
-
-        if (!effect.id) return "Conditions require an id field";
-
-        let existing = this.hasCondition(effect.id);
-
-        if (existing) {
-            return existing.delete();
-        }
+        const id = typeof effect === "string" ? effect : effect?.id;
+        if (!CONFIG.statusEffects.some(e => e.id === id)) return "No Effect Found";
+        return this.hasCondition(id)?.delete();
     }
 
     hasCondition(conditionKey) {
-        let existing = this.effects.find(i => i.getFlag("core", "statusId") === conditionKey);
-        return existing;
+        // Older conditions were tagged with flags.core.statusId only
+        return this.effects.find(e => e.statuses.has(conditionKey) || e.getFlag("core", "statusId") === conditionKey);
     }
 
     get characteristics() { return this.system.characteristics; }

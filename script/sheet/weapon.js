@@ -35,7 +35,7 @@ export class WeaponSheet extends DarkHeresyItemSheet {
     }
 
     async _onDrop(event) {
-        let dragEventData = TextEditor.getDragEventData(event);
+        let dragEventData = foundry.applications.ux.TextEditor.implementation.getDragEventData(event);
         let item = fromUuidSync(dragEventData.uuid);
 
         // We only want to allow drops on weapons that belong to an actor
