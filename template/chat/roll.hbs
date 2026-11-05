@@ -85,6 +85,15 @@
                 </div>
             {{/if}}
         {{/if}}
+        {{#if suppression}}
+            {{#if suppression.hitText}}
+            <p><strong>{{localize "PINNING.HITS_ON"}}:</strong> {{suppression.hitText}}</p>
+            {{/if}}
+            <p>{{localize "PINNING.CARD_TEXT"}}: <strong>{{suppression.pinningText}}</strong></p>
+            <div class="wrapper flex-column">
+                <button class="invoke-pinning dh-tall">{{localize "PINNING.ROLL"}}</button>
+            </div>
+        {{/if}}
         {{#if flags.isAttack}}
             {{#if flags.isSuccess}}
                 <div class="wrapper flex-column">

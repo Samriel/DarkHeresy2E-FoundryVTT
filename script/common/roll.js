@@ -2,6 +2,7 @@ import { blastArea, sprayArea, sprayJammed } from "./area.js";
 import { qualityValue } from "./qualities.js";
 import { checkWeaponJam, setSprayJam } from "./weapons.js";
 import { phenomenaModifier, fearConsequences } from "./tables.js";
+import { SUPPRESSION, SUPPRESSION_MODIFIER, suppressionArea, resolveSuppression, labelSuppressionDamages } from "./pinning.js";
 
 /**
  * Roll a generic roll, and post the result to chat.
@@ -43,6 +44,11 @@ export async function combatRoll(rollData) {
         await _updateRangedAmmo(rollData);
         await sendDamageToChat(rollData);
     } else {
+        const suppressing = Boolean(SUPPRESSION[rollData.attackType?.name]);
+        if (suppressing) {
+            rollData.rangeMod = 0; // hits land on random targets in the zone
+            if (!rollData.flags.isReRoll) rollData.area = await suppressionArea(rollData);
+        }
         await _computeCombatTarget(rollData);
         await _rollTarget(rollData);
         _applyHelplessTarget(rollData);
@@ -58,6 +64,7 @@ export async function combatRoll(rollData) {
             rollData.attackType,
             rollData.shotsFired,
             rollData.weapon.traits);
+        if (suppressing) resolveSuppression(rollData);
         const blast = Number(qualityValue(special, "blast")) || 0;
         if (blast && !rollData.flags.isEvasion && !rollData.weaponJam?.jammed) rollData.area = await blastArea(rollData, blast);
         await _sendRollToChat(rollData);
@@ -247,6 +254,7 @@ async function _rollDamage(rollData) {
     if (minDamage.minDice < rollData.dos) {
         minDamage.total += (rollData.dos - minDamage.minDice);
     }
+    labelSuppressionDamages(rollData);
 }
 
 /**
@@ -361,7 +369,8 @@ async function _updateRangedAmmo(rollData) {
                     rollData.weapon.clip.value -= firerate;
                     break;
                 }
-                case "semi_auto": {
+                case "semi_auto":
+                case "suppress_semi": {
                     firerate = rollData.weapon.rateOfFire.burst * mod;
                     if (rollData.weapon.clip.value < firerate) {
                         rollData.shotsFired = rollData.weapon.clip.value;
@@ -371,7 +380,8 @@ async function _updateRangedAmmo(rollData) {
                     }
                     break;
                 }
-                case "full_auto": {
+                case "full_auto":
+                case "suppress_full": {
                     firerate = rollData.weapon.rateOfFire.full * mod;
                     if (rollData.weapon.clip.value < firerate) {
                         rollData.shotsFired = rollData.weapon.clip.value;
@@ -505,6 +515,14 @@ function _computeRateOfFire(rollData) {
             rollData.attackType.modifier = -10;
             rollData.attackType.hitMargin = 1;
             rollData.attackType.maxHits = rollData.weapon.rateOfFire.full;
+            break;
+
+        case "suppress_semi":
+        case "suppress_full":
+            // Suppressing fire: Hard (−20) test without the burst modifiers, one hit per two degrees
+            rollData.attackType.modifier = SUPPRESSION_MODIFIER;
+            rollData.attackType.hitMargin = 2;
+            rollData.attackType.maxHits = rollData.weapon.rateOfFire[SUPPRESSION[rollData.attackType.name].rof];
             break;
 
         case "called_shot":

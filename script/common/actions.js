@@ -6,15 +6,16 @@
  * attack rolls by attack type, aiming, focus power rolls by the power's action, movement by the
  * distance moved this turn; an evasion roll uses the reaction. The combat tracker shows the pips
  * next to each combatant; the GM and the combatant's owner can click them to correct the count.
- * When the current combatant has spent both halves the turn passes on (setting «autoEndTurn»).
+ * When the current combatant has spent both halves (one while pinned) the turn passes on
+ * (setting «autoEndTurn»).
  */
 
 const FLAG = "actions";
 const EMPTY = { attack: 0, aim: 0, move: 0, manual: 0, charge: false, reaction: false };
 
-// Halves per attack type; called shot, charge and all-out attack are full actions
+// Halves per attack type; called shot, charge, all-out attack and suppressing fire are full actions
 const ATTACK_COST = { standard: 1, semi_auto: 1, full_auto: 1, lightning: 1, swift: 1,
-    called_shot: 2, charge: 2, allout: 2, none: 0 };
+    called_shot: 2, charge: 2, allout: 2, suppress_semi: 2, suppress_full: 2, none: 0 };
 
 /**
  * @param {Combatant} combatant
@@ -67,16 +68,25 @@ async function update(combatant, changes) {
 let endTimer = null;
 
 /**
+ * Half actions a combatant has per turn: one while pinned (core p. 284), otherwise two.
+ * @param {Combatant} combatant
+ * @returns {number}
+ */
+export function halvesPerTurn(combatant) {
+    return combatant?.actor?.statuses?.has("pinned") ? 1 : 2;
+}
+
+/**
  * Pass the turn on shortly after the current combatant has spent both halves.
  * @param {Combatant} combatant
  */
 function maybeEndTurn(combatant) {
     if (!game.settings.get("dark-heresy", "autoEndTurn")) return;
-    if (spentHalves(actionsOf(combatant)) < 2) return;
+    if (spentHalves(actionsOf(combatant)) < halvesPerTurn(combatant)) return;
     clearTimeout(endTimer);
     endTimer = setTimeout(async () => {
         const combat = game.combat;
-        if (combat?.combatant !== combatant || spentHalves(actionsOf(combatant)) < 2) return;
+        if (combat?.combatant !== combatant || spentHalves(actionsOf(combatant)) < halvesPerTurn(combatant)) return;
         ui.notifications.info(game.i18n.format("ACTIONS.TURN_ENDED", { name: combatant.name }));
         await combat.nextTurn();
     }, 2500);

@@ -6,6 +6,7 @@ import { onFearClick } from "./traits.js";
 import { onSprayDodgeClick } from "./area.js";
 import { weaponChatListeners } from "./weapons.js";
 import { onApplyConditionClick, onPhenomenaClick } from "./tables.js";
+import { onPinningClick, onPinningRecoverClick } from "./pinning.js";
 
 
 /**
@@ -26,6 +27,8 @@ export function chatListeners(html) {
         if (message?.getFlag("dark-heresy", "phenomenaRolled")) button.disabled = true;
         button.addEventListener("click", event => onPhenomenaClick(event));
     });
+    html.querySelectorAll(".invoke-pinning")?.forEach(button => button.addEventListener("click", event => onPinningClick(event, prepareCommonRoll, DarkHeresyUtil)));
+    html.querySelectorAll(".invoke-pinning-recover")?.forEach(button => button.addEventListener("click", event => onPinningRecoverClick(event, prepareCommonRoll, DarkHeresyUtil)));
     html.querySelectorAll(".reload-Weapon")?.forEach(button => button.addEventListener("click", event => onReloadClick(event)));
     html.querySelectorAll(".dark-heresy.chat.roll>.background.border")?.forEach(button => button.addEventListener("dblclick", event => onChatRollClick(event)));
 }

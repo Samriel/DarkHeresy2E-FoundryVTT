@@ -149,7 +149,8 @@ export function jamThreshold(rollData, weapon) {
     const special = rollData.weapon.special ?? "";
     if (qualityValue(special, "reliable")) return 100;
     if (qualityValue(special, "unreliable")) return 91;
-    return ["semi_auto", "full_auto"].includes(rollData.attackType?.name) ? 94 : 96;
+    // Bursts and suppressing fire jam on 94+ (core p. 276-277)
+    return ["semi_auto", "full_auto", "suppress_semi", "suppress_full"].includes(rollData.attackType?.name) ? 94 : 96;
 }
 
 /**

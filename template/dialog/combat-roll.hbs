@@ -37,7 +37,7 @@
                 <div class="wrapper">
                     <label>{{localize "DIALOG.ATTACK_TYPE"}}</label>
                     <select id="attackType">
-                        {{selectOptions (config "attackTypeRanged") selected=attackType.name localize=true}}
+                        {{selectOptions attackTypesRanged selected=attackType.name localize=true}}
                     </select>
                 </div>
             {{/if}}

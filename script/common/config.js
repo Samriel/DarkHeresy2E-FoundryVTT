@@ -7,7 +7,9 @@ Dh.attackTypeRanged = {
     standard: "ATTACK_TYPE.STANDARD",
     semi_auto: "ATTACK_TYPE.SEMI_AUTO",
     full_auto: "ATTACK_TYPE.FULL_AUTO",
-    called_shot: "ATTACK_TYPE.CALLED_SHOT"
+    called_shot: "ATTACK_TYPE.CALLED_SHOT",
+    suppress_semi: "ATTACK_TYPE.SUPPRESS_SEMI",
+    suppress_full: "ATTACK_TYPE.SUPPRESS_FULL"
 };
 
 Dh.attackTypeMelee = {

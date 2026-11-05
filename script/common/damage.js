@@ -10,6 +10,7 @@
 import { applyAttackQualities } from "./qualities.js";
 import { traitRating } from "./traits.js";
 import { deleteAreas } from "./area.js";
+import { suppressionDamages } from "./pinning.js";
 
 const SOCKET = "system.dark-heresy";
 
@@ -70,17 +71,21 @@ export async function applyToActors(message, tokens) {
     const payload = message && damagePayload(message);
     if (!payload) return;
     const evaded = new Set(message.getFlag("dark-heresy", "evaded") ?? []);
+    const rollData = message.getRollData();
     for (const token of tokens) {
         if (evaded.has(token.id) || evaded.has(token.actor?.id)) continue;
         const actor = token.actor;
         if (!actor) continue;
-        const request = { ...payload, sceneId: token.document.parent?.id, tokenId: token.id,
+        // Suppressing fire: each token takes only the hits that landed on it
+        const damages = suppressionDamages(rollData, payload.damages, token.id);
+        if (!damages.length) continue;
+        const request = { ...payload, damages, sceneId: token.document.parent?.id, tokenId: token.id,
             actorId: actor.id, userId: game.user.id };
         if (actor.isOwner) await applyDamageRequest(request);
         else if (game.users.activeGM) game.socket.emit(SOCKET, { type: "applyDamage", request });
         else ui.notifications.warn(game.i18n.format("DAMAGE.NO_GM", { name: token.name }));
     }
-    const regionId = message.getRollData()?.area?.regionId;
+    const regionId = rollData?.area?.regionId;
     if (regionId) await deleteAreas(r => r.id === regionId);
 }
 

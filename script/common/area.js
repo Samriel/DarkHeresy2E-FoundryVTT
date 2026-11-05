@@ -8,6 +8,7 @@
  * - Spray: a 30° cone from the attacker to the weapon's range, towards the single target or a clicked
  *   point. Targets may test Agility (+0, or +20 if the attacker lacks the matching Weapon Training);
  *   who passes is left out of the damage. A 9 on any damage die jams the weapon.
+ * - Suppressing fire (pinning.js): a 30° or 45° cone drawn by the same coneArea.
  * Area regions are removed when the damage from the card is applied, at the next turn change, or
  * when the same user makes the next area attack.
  */
@@ -102,36 +103,52 @@ export async function blastArea(rollData, radius) {
 }
 
 /**
- * Spray: 30° cone from the attacker to the weapon's range.
+ * A cone from the attacker towards the single target or a clicked point; tokens inside become targets.
  * @param {object} rollData
- * @returns {Promise<object|null>} {regionId}
+ * @param {object} options
+ * @param {number} options.angle full opening angle in degrees
+ * @param {number} options.length cone length in metres
+ * @param {string} options.label region name
+ * @param {string} [options.pickHint] notification shown when the user has to click the direction
+ * @returns {Promise<object|null>} {regionId, tokenIds}
  */
-export async function sprayArea(rollData) {
+export async function coneArea(rollData, { angle, length, label, pickHint }) {
     if (!canvas.ready) return null;
     const origin = attackerToken(rollData)?.center ?? await pickPoint(game.i18n.localize("AREA.PICK_ORIGIN"));
     if (!origin) return null;
-    const aim = singleTargetCenter() ?? await pickPoint(game.i18n.localize("AREA.PICK_SPRAY"));
+    const aim = singleTargetCenter() ?? await pickPoint(pickHint ?? game.i18n.localize("AREA.PICK_SPRAY"));
     if (!aim) return null;
-    const length = metresToPixels(Number(rollData.weapon.range) || 0);
-    if (!(length > 0)) return null;
+    const pixels = metresToPixels(Number(length) || 0);
+    if (!(pixels > 0)) return null;
     const dir = Math.atan2(aim.y - origin.y, aim.x - origin.x);
-    const half = 15 * Math.PI / 180;
+    const half = angle / 2 * Math.PI / 180;
     const points = [origin.x, origin.y];
     for (let i = 0; i <= 12; i++) {
         const a = dir - half + (2 * half * i / 12);
-        points.push(origin.x + Math.cos(a) * length, origin.y + Math.sin(a) * length);
+        points.push(origin.x + Math.cos(a) * pixels, origin.y + Math.sin(a) * pixels);
     }
     const self = attackerToken(rollData);
     const regionId = await createArea({ type: "polygon", points }, t => {
         if (t === self) return false;
         const dx = t.center.x - origin.x, dy = t.center.y - origin.y;
         const d = Math.hypot(dx, dy);
-        if (d > length + t.w / 2) return false;
+        if (d > pixels + t.w / 2) return false;
         let delta = Math.atan2(dy, dx) - dir;
         delta = Math.atan2(Math.sin(delta), Math.cos(delta));
         return Math.abs(delta) <= half + Math.atan2(t.w / 2, Math.max(d, 1));
-    }, `${rollData.itemName ?? rollData.name}: ${game.i18n.localize("AREA.SPRAY")}`);
-    return { regionId };
+    }, label);
+    return { regionId, tokenIds: [...game.user.targets].map(t => t.id) };
+}
+
+/**
+ * Spray: 30° cone from the attacker to the weapon's range.
+ * @param {object} rollData
+ * @returns {Promise<object|null>} {regionId}
+ */
+export async function sprayArea(rollData) {
+    const area = await coneArea(rollData, { angle: 30, length: Number(rollData.weapon.range) || 0,
+        label: `${rollData.itemName ?? rollData.name}: ${game.i18n.localize("AREA.SPRAY")}` });
+    return area ? { regionId: area.regionId } : null;
 }
 
 /**

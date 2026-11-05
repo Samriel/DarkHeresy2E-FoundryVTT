@@ -1,6 +1,7 @@
 import { commonRoll, combatRoll, reportEmptyClip } from "./roll.js";
 import { applySituationalModifiers } from "./situational.js";
 import { weaponReady } from "./weapons.js";
+import { SUPPRESSION, canSuppress, applyPinnedPenalty } from "./pinning.js";
 
 /**
  * Show a generic roll dialog.
@@ -67,9 +68,17 @@ export async function prepareCombatRoll(rollData, actorRef) {
     if (rollData.weapon.isRange && rollData.weapon.clip.value <= 0) {
         reportEmptyClip(rollData);
     } else {
+        const attacker = actorRef ?? game.actors.get(rollData.ownerId);
+        const pinnedNotes = applyPinnedPenalty(rollData, attacker);
+        const plain = { modifier: rollData.target.modifier };
         // Range band, size, shooting into melee and prone target of the single targeted token
-        rollData.autoNotes = applySituationalModifiers(rollData, actorRef ?? game.actors.get(rollData.ownerId));
-        const html = await foundry.applications.handlebars.renderTemplate("systems/dark-heresy/template/dialog/combat-roll.hbs", rollData);
+        rollData.autoNotes = [...pinnedNotes, ...applySituationalModifiers(rollData, attacker)];
+        const situational = { modifier: rollData.target.modifier, range: rollData.rangeMod };
+        // Suppressing fire only with a weapon that fires the matching burst
+        const attackTypes = Object.fromEntries(Object.entries(game.darkHeresy.config.attackTypeRanged)
+            .filter(([key]) => !SUPPRESSION[key] || canSuppress(rollData, key)));
+        const html = await foundry.applications.handlebars.renderTemplate("systems/dark-heresy/template/dialog/combat-roll.hbs",
+            { ...rollData, attackTypesRanged: attackTypes });
         let dialog = new Dialog({
             title: rollData.name,
             content: html,
@@ -142,6 +151,12 @@ export async function prepareCombatRoll(rollData, actorRef) {
                 const toggle = () => location.toggle(type.val() === "called_shot");
                 type.on("change", toggle);
                 toggle();
+                // Suppressing fire ignores the single-target modifiers: random targets in the zone
+                type.on("change", () => {
+                    const suppressing = Boolean(SUPPRESSION[type.val()]);
+                    html.find("#modifier").val(suppressing ? plain.modifier : situational.modifier);
+                    html.find("#range").val(suppressing ? "0" : String(situational.range ?? 0));
+                });
             }
         }, {width: 200});
         dialog.render(true);
