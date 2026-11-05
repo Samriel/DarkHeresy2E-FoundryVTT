@@ -30,6 +30,21 @@ Dh.attackTypePsy = {
     blast: "PSYCHIC_POWER.BLAST"
 };
 
+// Opposed focus power test of the target (psychic power sheet); "" detects it from the power's texts
+Dh.opposedTests = {
+    "": "PSY.OPPOSED_AUTO",
+    none: "PSY.OPPOSED_NONE",
+    willpower: "CHARACTERISTIC.WILLPOWER",
+    toughness: "CHARACTERISTIC.TOUGHNESS",
+    perception: "CHARACTERISTIC.PERCEPTION",
+    intelligence: "CHARACTERISTIC.INTELLIGENCE",
+    agility: "CHARACTERISTIC.AGILITY",
+    fellowship: "CHARACTERISTIC.FELLOWSHIP",
+    strength: "CHARACTERISTIC.STRENGTH",
+    weaponSkill: "CHARACTERISTIC.WEAPON_SKILL",
+    ballisticSkill: "CHARACTERISTIC.BALLISTIC_SKILL"
+};
+
 Dh.ranges = {
     0: "RANGE.NONE",
     30: "RANGE.POINT_BLANK",

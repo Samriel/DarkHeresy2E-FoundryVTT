@@ -34,6 +34,7 @@ import { registerAreas } from "./common/area.js";
 import { registerWeapons } from "./common/weapons.js";
 import { registerOps } from "./common/ops.js";
 import { registerConditions } from "./common/conditions.js";
+import { registerPsychic } from "./common/psychic.js";
 import { replaceSymbols } from "./common/roll.js";
 import DarkHeresyUtil from "./common/util.js";
 import { registerTablesApi, registerTablesSocket } from "./common/tables.js";
@@ -142,6 +143,7 @@ Hooks.once("ready", function() {
     registerAreas();
     registerTablesSocket();
     registerRequisitionSocket();
+    registerPsychic();
     CONFIG.ChatMessage.documentClass.prototype.getRollData = function() {
         return this.getFlag("dark-heresy", "rollData");
     };

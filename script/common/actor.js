@@ -1,6 +1,7 @@
 import { traitRating, traitArmour, unnaturalRatings, daemonicApplies } from "./traits.js";
 import { qualityValue } from "./qualities.js";
 import { criticalEffect } from "./tables.js";
+import { sustainedPowers, sustainPenalty } from "./psychic.js";
 
 export class DarkHeresyActor extends Actor {
 
@@ -35,6 +36,18 @@ export class DarkHeresyActor extends Actor {
         if (size) this.system.size = size;
         this._computeMovement();
         this._computeItems();
+        this._computePsy();
+    }
+
+    /**
+     * Sustained powers are the powers marked as sustained; while sustaining several powers the psy rating
+     * drops by their number (core p. 241).
+     */
+    _computePsy() {
+        const count = sustainedPowers(this).length;
+        this.psy.sustained = count;
+        this.psy.sustainPenalty = sustainPenalty(count);
+        this.psy.currentRating = Math.max(0, (Number(this.psy.rating) || 0) - this.psy.sustainPenalty);
     }
 
     _computeCharacteristics() {
@@ -59,7 +72,6 @@ export class DarkHeresyActor extends Actor {
         }
         this.system.insanityBonus = Math.floor(this.insanity / 10);
         this.system.corruptionBonus = Math.floor(this.corruption / 10);
-        this.psy.currentRating = this.psy.rating - this.psy.sustained;
         this.initiative.bonus = this.characteristics[this.initiative.characteristic].bonus;
         // Done as variables to make it easier to read & understand
         let tb = Math.floor(

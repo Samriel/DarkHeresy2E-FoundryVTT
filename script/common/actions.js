@@ -8,6 +8,8 @@
  * next to each combatant; the GM and the combatant's owner can click them to correct the count.
  * When the current combatant has spent both halves (one while pinned) the turn passes on
  * (setting «autoEndTurn»).
+ * Sustained psychic powers (core p. 241) take the most demanding sustain action at the start of the
+ * psyker's turn; dropping them during that turn gives the halves back.
  *
  * The record also keeps what lasts until the combatant's next turn (core pp. 269–273): «stance» —
  * "defensive" (Defensive Stance: an extra Evasion reaction, opponents −20 WS) or "cautious"
@@ -16,9 +18,11 @@
  * (the free second attack of two-weapon fighting is pending).
  */
 
+import { sustainedPowers, sustainHalves } from "./psychic.js";
+
 const FLAG = "actions";
-const EMPTY = { attack: 0, aim: 0, move: 0, manual: 0, charge: false, reaction: false, reaction2: false,
-    stance: null, allOut: false, feint: null, twin: false };
+const EMPTY = { attack: 0, aim: 0, move: 0, manual: 0, sustain: 0, sustainIds: [], charge: false, reaction: false,
+    reaction2: false, stance: null, allOut: false, feint: null, twin: false };
 
 // Halves per attack type; called shot, charge, all-out attack and suppressing fire are full actions
 const ATTACK_COST = { standard: 1, semi_auto: 1, full_auto: 1, lightning: 1, swift: 1,
@@ -39,7 +43,7 @@ export function actionsOf(combatant) {
  */
 export function spentHalves(a) {
     if (a.charge) return 2;
-    return Math.max(0, Math.min(2, a.attack + a.aim + a.move + a.manual));
+    return Math.max(0, Math.min(2, a.attack + a.aim + a.move + a.sustain + a.manual));
 }
 
 /**
@@ -191,13 +195,28 @@ async function onTurnChange(combat, prior, current) {
         const reaction = newRound ? false : a.reaction;
         const reaction2 = newRound ? false : a.reaction2;
         if (c.id === current.combatantId) {
-            updates.push({ _id: c.id, [`flags.dark-heresy.${FLAG}`]: { ...EMPTY, reaction, reaction2 } });
+            // Sustained powers cost their sustain action every turn after the one they were manifested in
+            const powers = sustainedPowers(c.actor);
+            updates.push({ _id: c.id, [`flags.dark-heresy.${FLAG}`]: { ...EMPTY, reaction, reaction2,
+                sustain: sustainHalves(powers), sustainIds: powers.map(p => p.id) } });
         } else if (reaction !== a.reaction || reaction2 !== a.reaction2) {
             updates.push({ _id: c.id, [`flags.dark-heresy.${FLAG}.reaction`]: reaction,
                 [`flags.dark-heresy.${FLAG}.reaction2`]: reaction2 });
         }
     }
     if (updates.length) await combat.updateEmbeddedDocuments("Combatant", updates);
+}
+
+/** updateItem: a power dropped during the psyker's own turn no longer costs its sustain action (active GM only). */
+async function onUpdateItem(item, changes) {
+    if (!isActiveGM() || item.type !== "psychicPower") return;
+    if (!foundry.utils.hasProperty(changes, "flags.dark-heresy")) return;
+    const combatant = game.combat?.started ? game.combat.combatant : null;
+    if (!combatant?.actor || combatant.actor !== item.parent) return;
+    const a = actionsOf(combatant);
+    const still = sustainedPowers(combatant.actor).filter(p => a.sustainIds.includes(p.id));
+    const sustain = sustainHalves(still);
+    if (sustain < a.sustain) await update(combatant, { sustain });
 }
 
 /** renderCombatTracker: half-action and reaction pips next to each combatant. */
@@ -227,7 +246,7 @@ function onRenderTracker(app, html) {
                 ev.stopPropagation();
                 const i = Number(pip.dataset.half);
                 const target = spent >= i ? i - 1 : i;
-                update(combatant, { charge: false, manual: target - (a.attack + a.aim + a.move) });
+                update(combatant, { charge: false, manual: target - (a.attack + a.aim + a.move + a.sustain) });
             }));
             box.querySelector(".dh-pip.reaction:not(.second)").addEventListener("click", ev => {
                 ev.stopPropagation();
@@ -255,5 +274,6 @@ export function registerActions() {
     Hooks.on("createChatMessage", onChatMessage);
     Hooks.on("moveToken", onMoveToken);
     Hooks.on("combatTurnChange", onTurnChange);
+    Hooks.on("updateItem", onUpdateItem);
     Hooks.on("renderCombatTracker", onRenderTracker);
 }

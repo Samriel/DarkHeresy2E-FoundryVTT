@@ -1,3 +1,5 @@
+import { addPsychicRollData } from "./psychic.js";
+
 export default class DarkHeresyUtil {
 
     static createCommonAttackRollData(actor, item) {
@@ -91,16 +93,22 @@ export default class DarkHeresyUtil {
             special: power.damage.special
         });
         rollData.weapon.traits.skipAttackRoll = false;
-        rollData.attackType.name = power.damage.zone;
+        // A power without damage is not an attack: no hits, evasion or damage buttons
+        rollData.attackType.name = power.damage.formula ? power.damage.zone : "none";
+        if (rollData.attackType.name === "none") rollData.flags.isAttack = false;
         rollData.powerAction = power.action;
+        // Sustaining several powers lowers the psy rating (core p. 241): actor.psy.currentRating
+        const rating = Math.max(0, Number(actor.psy.currentRating ?? actor.psy.rating) || 0);
         rollData.psy = {
-            value: actor.psy.rating,
-            rating: actor.psy.rating,
+            value: Math.max(1, rating),
+            rating: rating,
             class: actor.psy.class,
-            max: this.getMaxPsyRating(actor),
+            max: this.getMaxPsyRating(actor, rating),
             warpConduit: false,
+            focusBonus: focusPowerTarget.bonus ?? actor.characteristics.willpower.bonus,
             display: true
         };
+        addPsychicRollData(rollData, actor, power);
         return rollData;
     }
 
@@ -183,8 +191,8 @@ export default class DarkHeresyUtil {
         };
     }
 
-    static getMaxPsyRating(actor) {
-        let base = actor.psy.rating;
+    static getMaxPsyRating(actor, rating) {
+        let base = rating ?? actor.psy.rating;
         switch (actor.psy.class) {
             case "bound":
                 return base + 2;

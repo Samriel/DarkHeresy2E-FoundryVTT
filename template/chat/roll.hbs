@@ -84,6 +84,30 @@
                     <button class="roll-phenomena">{{localize "TABLES.ROLL_PHENOMENA"}}{{#if psy.phenomena}} ({{dhSigned psy.phenomena.total}}){{/if}}</button>
                 </div>
             {{/if}}
+            {{#if area.radius}}
+                <p><strong>{{localize "AREA.BLAST"}}:</strong> {{area.radius}} m</p>
+            {{/if}}
+            {{#if flags.isSuccess}}
+                {{#if psy.opposed}}
+                    <p><strong>{{localize "PSY.OPPOSED"}}:</strong> {{localize (lookup (config "opposedTests") psy.opposed)}}</p>
+                    <div class="wrapper flex-column">
+                        {{#each psy.targets}}
+                            <button class="psy-opposed" data-token-id="{{tokenId}}" data-scene-id="{{sceneId}}">{{localize "PSY.OPPOSED_BUTTON"}}: {{name}}</button>
+                        {{else}}
+                            <button class="psy-opposed">{{localize "PSY.OPPOSED_BUTTON_SELECTED"}}</button>
+                        {{/each}}
+                    </div>
+                    <div class="psy-opposed-results"></div>
+                {{/if}}
+                {{#if psy.sustainable}}
+                    <div class="wrapper flex-column">
+                        <button class="psy-sustain">{{localize "PSY.SUSTAIN"}}</button>
+                    </div>
+                {{/if}}
+            {{/if}}
+        {{/if}}
+        {{#if opposedOutcome}}
+            <p><strong>{{opposedOutcome.text}}</strong></p>
         {{/if}}
         {{#if suppression}}
             {{#if suppression.hitText}}

@@ -41,7 +41,16 @@ const BANDS = [
     { mod: -30, key: "RANGE.EXTREME" }
 ];
 
-/** Distance between two tokens in scene units, edge to edge on the grid (adjacent = 1 square). */
+/**
+ * Distance between two tokens in scene units, edge to edge on the grid (adjacent = 1 square).
+ * @param {Token} a
+ * @param {Token} b
+ * @returns {number}
+ */
+export function tokenDistance(a, b) {
+    return distance(a, b);
+}
+
 function distance(a, b) {
     const d = canvas.grid.measurePath([a.center, b.center]).distance;
     // measure between token edges for tokens bigger than one square

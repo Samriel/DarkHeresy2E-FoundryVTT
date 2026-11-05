@@ -3,6 +3,7 @@ import { qualityValue } from "./qualities.js";
 import { checkWeaponJam, setSprayJam } from "./weapons.js";
 import { phenomenaModifier, fearConsequences } from "./tables.js";
 import { SUPPRESSION, SUPPRESSION_MODIFIER, suppressionArea, resolveSuppression, labelSuppressionDamages } from "./pinning.js";
+import { psychicBlast, resolveOpposed } from "./psychic.js";
 
 /**
  * Roll a generic roll, and post the result to chat.
@@ -11,6 +12,8 @@ import { SUPPRESSION, SUPPRESSION_MODIFIER, suppressionArea, resolveSuppression,
 export async function commonRoll(rollData) {
     await _computeCommonTarget(rollData);
     await _rollTarget(rollData);
+    // Opposed test against a psychic power card (psychic.js)
+    if (rollData.opposedTo) resolveOpposed(rollData);
     if (rollData.flags.isEvasion) {
         rollData.numberOfHits = _computeNumberOfHits(
             rollData.attackDos,
@@ -65,8 +68,10 @@ export async function combatRoll(rollData) {
             rollData.shotsFired,
             rollData.weapon.traits);
         if (suppressing) resolveSuppression(rollData);
-        const blast = Number(qualityValue(special, "blast")) || 0;
+        // Psychic blasts take their radius from the psy rating and do not scatter (psychic.js)
+        const blast = rollData.psy?.display ? 0 : Number(qualityValue(special, "blast")) || 0;
         if (blast && !rollData.flags.isEvasion && !rollData.weaponJam?.jammed) rollData.area = await blastArea(rollData, blast);
+        if (rollData.psy?.display && !rollData.flags.isEvasion) rollData.area = await psychicBlast(rollData);
         await _sendRollToChat(rollData);
     }
 }
@@ -510,6 +515,20 @@ function _computeRateOfFire(rollData) {
             rollData.attackType.maxHits = rollData.weapon.rateOfFire.burst;
             break;
 
+        // Psychic storm: a hit per degree of success up to the psy rating used, no test modifier (core p. 244)
+        case "storm":
+            rollData.attackType.modifier = 0;
+            rollData.attackType.hitMargin = 1;
+            rollData.attackType.maxHits = rollData.weapon.rateOfFire.full;
+            break;
+
+        // Psychic power that is not an attack
+        case "none":
+            rollData.attackType.modifier = 0;
+            rollData.attackType.hitMargin = 1;
+            rollData.attackType.maxHits = 0;
+            break;
+
         case "lightning":
         case "full_auto":
             rollData.attackType.modifier = -10;
@@ -670,7 +689,8 @@ function _appendTearing(formula) {
  * @param {object} rollData
  */
 async function _sendRollToChat(rollData) {
-    let speaker = ChatMessage.getSpeaker();
+    // A test made for another token (opposed test of a power's target) speaks as that token
+    let speaker = rollData.speaker ?? ChatMessage.getSpeaker();
     let chatData = {
         user: game.user.id,
         rollMode: game.settings.get("core", "rollMode"),

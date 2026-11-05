@@ -178,7 +178,8 @@
             </div>
             <div class="sustained">
                 <label>{{localize "PSYCHIC_POWER.SUSTAINED"}}</label>
-                <input name="system.psy.sustained" type="number" value="{{system.psy.sustained}}" data-dtype="Number" />
+                <input type="number" value="{{system.psy.sustained}}" data-dtype="Number" disabled
+                    data-tooltip="{{localize "PSY.SUSTAINED_COUNT_HINT"}}" />
             </div>
         </div>
         <div class="item-list">
@@ -204,7 +205,14 @@
                         </div>
                         <div class="action">{{item.action}}</div>
                         <div class="range">{{item.range}}</div>
-                        <div class="sustained">{{item.sustained}}</div>
+                        <div class="sustained">
+                            {{#if item.isSustainable}}
+                                <a class="psy-sustain-toggle{{#if item.isSustained}} active{{/if}}"
+                                    data-tooltip="{{#if item.isSustained}}{{localize "PSY.SUSTAIN_DROP"}}{{else}}{{localize "PSY.SUSTAIN"}}{{/if}}">
+                                    <i class="fas {{#if item.isSustained}}fa-circle-dot{{else}}fa-circle{{/if}}"></i></a>
+                            {{/if}}
+                            {{item.sustained}}
+                        </div>
                         <div class="zone">{{item.PsychicPowerZone}}</div>
                         <div class="damage">{{item.damage.formula}}</div>
                         <div class="damage-type">{{item.DamageTypeShort}}</div>

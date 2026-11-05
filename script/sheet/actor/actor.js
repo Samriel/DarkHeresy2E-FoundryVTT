@@ -1,5 +1,6 @@
 import { prepareCommonRoll, prepareCombatRoll, preparePsychicPowerRoll } from "../../common/dialog.js";
 import DarkHeresyUtil from "../../common/util.js";
+import { setSustained } from "../../common/psychic.js";
 
 export class DarkHeresySheet extends foundry.appv1.sheets.ActorSheet {
     activateListeners(html) {
@@ -15,6 +16,7 @@ export class DarkHeresySheet extends foundry.appv1.sheets.ActorSheet {
         html.find(".roll-corruption").click(async ev => await this._prepareRollCorruption(ev));
         html.find(".roll-weapon").click(async ev => await this._prepareRollWeapon(ev));
         html.find(".roll-psychic-power").click(async ev => await this._prepareRollPsychicPower(ev));
+        html.find(".psy-sustain-toggle").click(async ev => await this._onSustainToggle(ev));
         html.find(".condition-toggle").click(this._onConditionToggle.bind(this));
     }
 
@@ -163,6 +165,18 @@ export class DarkHeresySheet extends foundry.appv1.sheets.ActorSheet {
         await preparePsychicPowerRoll(
             DarkHeresyUtil.createPsychicRollData(this.actor, psychicPower)
         );
+    }
+
+    /**
+     * Mark a psychic power as sustained or drop it (core p. 241).
+     * @param {Event} event
+     */
+    async _onSustainToggle(event) {
+        event.preventDefault();
+        const div = $(event.currentTarget).parents(".item");
+        const power = this.actor.items.get(div.data("itemId"));
+        if (!power) return;
+        await setSustained(power, !power.isSustained, { psyRating: this.actor.psy.currentRating });
     }
 
     _onConditionToggle(ev)

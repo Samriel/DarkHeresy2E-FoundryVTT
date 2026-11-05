@@ -53,6 +53,14 @@
                     </div>
                 </div>
                 <div class="stats-row">
+                    <div class="stat opposed">
+                        <label>{{localize "PSY.OPPOSED"}}</label>
+                        <select name="system.focusPower.opposed">
+                            {{selectOptions (config "opposedTests") selected=system.focusPower.opposed localize=true}}
+                        </select>
+                    </div>
+                </div>
+                <div class="stats-row">
                     <div class="stat damage">
                         <label>{{localize "PSYCHIC_POWER.DAMAGE_FULL"}}</label>
                         <input name="system.damage.formula" type="text" value="{{system.damage.formula}}" />

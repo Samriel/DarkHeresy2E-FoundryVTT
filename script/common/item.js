@@ -1,3 +1,5 @@
+import { isSustainable } from "./psychic.js";
+
 export class DarkHeresyItem extends Item {
     async sendToChat() {
         const html = await foundry.applications.handlebars.renderTemplate("systems/dark-heresy/template/chat/item.hbs", { item: this, data: this.system });
@@ -213,6 +215,8 @@ export class DarkHeresyItem extends Item {
                 return game.i18n.localize("PSYCHIC_POWER.BARRAGE");
             case "storm":
                 return game.i18n.localize("PSYCHIC_POWER.STORM");
+            case "blast":
+                return game.i18n.localize("PSYCHIC_POWER.BLAST");
             default:
                 return game.i18n.localize("PSYCHIC_POWER.BOLT");
         }
@@ -308,6 +312,12 @@ export class DarkHeresyItem extends Item {
     get range() { return this.system.range; }
 
     get sustained() { return this.system.sustained; }
+
+    /** Psychic power marked as sustained (psychic.js). */
+    get isSustained() { return Boolean(this.getFlag("dark-heresy", "sustained")); }
+
+    /** Psychic power that can be sustained. */
+    get isSustainable() { return this.isPsychicPower && isSustainable(this); }
 
     get psychicType() { return this.system.subtype; }
 

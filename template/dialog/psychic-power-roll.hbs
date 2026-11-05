@@ -9,12 +9,17 @@
             <label>{{localize "DIALOG.MODIFIER"}}</label>
             <input id="modifier" type="text" value="{{target.modifier}}"/>
         </div>
+        {{#each autoNotes}}
+            <div class="wrapper" style="flex-basis: 100%"><em>{{this}}</em></div>
+        {{/each}}
         <div class="separator"></div>
         <div class="wrapper">
             <label>{{localize "DIALOG.PSY_RATING"}}</label>
             <input id="rating" class="range" type="range" min="1" max="{{psy.max}}" value="{{psy.value}}" data-dtype="Number" />
             <input id="psy" class="rangeBox" type="number" value="{{psy.value}}" data-dtype="Number" />
         </div>
+        <div class="wrapper psy-range" style="flex-basis: 100%"><em class="psy-range-text"></em></div>
+        <div class="wrapper psy-range-warning" style="flex-basis: 100%; display: none"><strong style="color: var(--color-failure)"></strong></div>
         <!--Done here because nothing else seemed to work. Open for better ideas-->
         <script>
             var slider = document.getElementById("rating");

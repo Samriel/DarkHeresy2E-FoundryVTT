@@ -3,6 +3,7 @@ import { applySituationalModifiers } from "./situational.js";
 import { weaponReady } from "./weapons.js";
 import { SUPPRESSION, canSuppress, applyPinnedPenalty } from "./pinning.js";
 import { applyOwnConditions, rollActor } from "./conditions.js";
+import { psychicDialogInfo } from "./psychic.js";
 
 /**
  * Show a generic roll dialog.
@@ -182,6 +183,9 @@ export async function prepareCombatRoll(rollData, actorRef) {
  * @param {object} rollData
  */
 export async function preparePsychicPowerRoll(rollData) {
+    // Sustained powers, opposed test, range and distance to a single target (psychic.js)
+    const info = psychicDialogInfo(rollData);
+    rollData.autoNotes = info.notes;
     const html = await foundry.applications.handlebars.renderTemplate("systems/dark-heresy/template/dialog/psychic-power-roll.hbs", rollData);
     let dialog = new Dialog({
         title: rollData.name,
@@ -205,8 +209,14 @@ export async function preparePsychicPowerRoll(rollData) {
                     rollData.attackType.name = attackType.value;
                     rollData.attackType.text = attackType.options[attackType.selectedIndex].text;
                     rollData.psy.useModifier = true;
+                    rollData.flags.isAttack = attackType.value !== "none";
                     rollData.flags.isDamageRoll = false;
                     rollData.flags.isCombatRoll = true;
+                    // Targets of an opposed power, for the opposed test buttons on the card
+                    if (rollData.psy.opposed) {
+                        rollData.psy.targets = [...game.user.targets].filter(t => t.actor).map(t => ({
+                            tokenId: t.id, sceneId: t.scene?.id ?? canvas.scene?.id, name: t.name }));
+                    }
                     await combatRoll(rollData);
                 }
             },
@@ -217,7 +227,21 @@ export async function preparePsychicPowerRoll(rollData) {
             }
         },
         default: "roll",
-        close: () => {}
+        close: () => {},
+        render: html => {
+            const text = html.find(".psy-range-text");
+            const warning = html.find(".psy-range-warning");
+            const refresh = event => {
+                const source = event?.target?.id === "rating" ? event.target : html.find("#psy")[0];
+                const pr = parseInt(source?.value, 10) || 0;
+                const { text: line, warning: warn } = info.update(pr);
+                text.text(line);
+                warning.find("strong").text(warn);
+                warning.toggle(Boolean(warn));
+            };
+            html.find("#rating, #psy").on("input change", refresh);
+            refresh();
+        }
     }, {width: 200});
     dialog.render(true);
 }

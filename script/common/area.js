@@ -80,11 +80,15 @@ async function createArea(shape, inside, label) {
  * Blast (X) after an attack roll: circle at the target, scattered on a failed test.
  * @param {object} rollData
  * @param {number} radius metres
- * @returns {Promise<object|null>} {regionId, scatter}
+ * @param {object} [options]
+ * @param {boolean} [options.self] centred on the attacker, who is left out (psychic blasts with range «Self»)
+ * @returns {Promise<object|null>} {regionId, scatter, radius}
  */
-export async function blastArea(rollData, radius) {
+export async function blastArea(rollData, radius, { self = false } = {}) {
     if (!canvas.ready || !(radius > 0)) return null;
-    let center = singleTargetCenter() ?? await pickPoint(game.i18n.localize("AREA.PICK_BLAST"));
+    const own = attackerToken(rollData);
+    let center = (self && own) ? { ...own.center }
+        : singleTargetCenter() ?? await pickPoint(game.i18n.localize("AREA.PICK_BLAST"));
     if (!center) return null;
     let scatter = null;
     if (!rollData.flags.isSuccess) {
@@ -98,9 +102,9 @@ export async function blastArea(rollData, radius) {
     }
     const r = metresToPixels(radius);
     const regionId = await createArea({ type: "circle", x: center.x, y: center.y, radius: r },
-        t => Math.hypot(t.center.x - center.x, t.center.y - center.y) <= r + t.w / 2 - 1,
+        t => !(self && t === own) && Math.hypot(t.center.x - center.x, t.center.y - center.y) <= r + t.w / 2 - 1,
         `${rollData.itemName ?? rollData.name}: ${game.i18n.localize("AREA.BLAST")} (${radius})`);
-    return { regionId, scatter };
+    return { regionId, scatter, radius };
 }
 
 /**

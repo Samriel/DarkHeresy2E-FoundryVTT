@@ -1294,7 +1294,8 @@
             "action": "",
             "focusPower": {
                 "difficulty": 0,
-                "test": ""
+                "test": "",
+                "opposed": ""
             },
             "range": "",
             "sustained": "",
