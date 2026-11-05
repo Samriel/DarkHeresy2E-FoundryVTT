@@ -37,6 +37,7 @@ import { registerConditions } from "./common/conditions.js";
 import { registerPsychic } from "./common/psychic.js";
 import { registerCombatActions, combatActionMenu } from "./common/combat-actions.js";
 import { registerCover } from "./common/cover.js";
+import { registerEnvironment } from "./common/environment.js";
 import { replaceSymbols } from "./common/roll.js";
 import DarkHeresyUtil from "./common/util.js";
 import { registerTablesApi, registerTablesSocket } from "./common/tables.js";
@@ -96,6 +97,7 @@ Hooks.once("init", function() {
     registerMindApi();
     registerCombatActions({ prepareCombatRoll, util: DarkHeresyUtil });
     registerCover();
+    registerEnvironment();
     game.macro = DhMacroUtil;
     const sheets = foundry.applications.apps.DocumentSheetConfig;
     sheets.unregisterSheet(Actor, "core", foundry.appv1.sheets.ActorSheet);

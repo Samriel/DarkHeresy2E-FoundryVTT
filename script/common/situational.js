@@ -16,10 +16,12 @@
  * - Weapon Training: −20 without the talent for the weapon (weapons.js), with or without a target.
  * - Target in Defensive Stance: −20 to melee attacks (p. 269). Grappled target: +20 to melee attacks of
  *   anyone but its grapple partner (p. 281).
+ * - Darkness, fog and smoke, weather, higher ground, ganging up (pp. 283, 285): environment.js.
  */
 import { sizeHitModifier } from "./traits.js";
 import { applyTrainingModifier } from "./weapons.js";
 import { recordOfActor, grappleOf } from "./conditions.js";
+import { environmentModifiers } from "./environment.js";
 
 // Token statuses (CONFIG.statusEffects ids)
 const HELPLESS = ["unconscious", "helpless"];
@@ -156,6 +158,9 @@ export function applySituationalModifiers(rollData, actor) {
             notes.push(game.i18n.format("RANGE.PRONE_NOTE", { modifier: "+10" }));
         }
     }
+    const env = environmentModifiers(rollData, attacker, target, adjacent);
+    modifier += env.modifier;
+    notes.push(...env.notes);
     rollData.target.modifier = (Number(rollData.target.modifier) || 0) + modifier;
     return notes;
 }
