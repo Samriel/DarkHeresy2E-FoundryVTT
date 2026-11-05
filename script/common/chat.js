@@ -169,7 +169,6 @@ async function onTestClick(ev) {
     rollData.evasions = evasions;
     rollData.target.modifier = 0;
     rollData.flags.isEvasion = true;
-    rollData.evader = { actorId: actor.id, tokenId: actor.token?.id ?? null }; // whose Fate the evasion uses
     rollData.flags.isAttack = false;
     rollData.flags.isDamageRoll = false;
     rollData.flags.isCombatRoll = false;

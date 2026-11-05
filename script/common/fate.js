@@ -79,10 +79,7 @@ export function canBurnFate(actor) {
  */
 export function rollActor(rollData) {
     // An evasion carries the attack's owner; the evading character is recorded separately (chat.js)
-    if (rollData?.flags?.isEvasion && rollData.evader) {
-        const evader = rollData.evader;
-        return (evader.tokenId && canvas?.tokens?.get(evader.tokenId)?.actor) || game.actors.get(evader.actorId) || null;
-    }
+    if (rollData?.flags?.isEvasion && rollData.evaderUuid) return fromUuidSync(rollData.evaderUuid) ?? null;
     const token = rollData?.tokenId ? canvas?.tokens?.get(rollData.tokenId) : null;
     return token?.actor ?? game.actors.get(rollData?.ownerId) ?? null;
 }
