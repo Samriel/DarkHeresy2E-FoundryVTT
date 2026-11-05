@@ -1,6 +1,7 @@
 import { traitRating, traitArmour, unnaturalRatings, daemonicApplies } from "./traits.js";
 import { qualityValue } from "./qualities.js";
 import { criticalEffect } from "./tables.js";
+import { coverArmour, wearCover } from "./cover.js";
 import { sustainedPowers, sustainPenalty } from "./psychic.js";
 
 export class DarkHeresyActor extends Actor {
@@ -444,10 +445,20 @@ export class DarkHeresyActor extends Actor {
         const damageTaken = [];
         const maxWounds = this.wounds.max;
 
+        // Cover hit by the attack (core p. 282): its armour points add to the location's, a hit over them wears it
+        let coverHits = 0;
+        let coverWorn = 0;
+
         // Apply damage from multiple hits
         for (const damage of damages) {
-            // Get the armour for the location and minus penetration, no negatives
-            let armour = Math.max(this._getArmour(damage.location) - Number(damage.penetration), 0);
+            // Cover armour left after the earlier hits of this attack
+            const cover = Math.max(coverArmour(this, damage.location) - coverWorn, 0);
+            if (cover) {
+                coverHits++;
+                if (Number(damage.amount) > cover) coverWorn++;
+            }
+            // Get the armour for the location (and cover) and minus penetration, no negatives
+            let armour = Math.max(this._getArmour(damage.location) + cover - Number(damage.penetration), 0);
             // Graviton: extra damage equal to the armour points at the location
             const amount = Number(damage.amount) + (graviton ? this._getArmour(damage.location) : 0);
             // Reduce damage by toughness bonus
@@ -499,6 +510,7 @@ export class DarkHeresyActor extends Actor {
         }, updates);
 
         await this._showCritMessage(damageTaken, this.name, wounds, criticalWounds, special);
+        if (coverHits) await wearCover(this, coverWorn, coverHits);
         return allowed !== false ? this.update(updates) : this;
     }
 

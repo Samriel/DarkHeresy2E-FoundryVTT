@@ -7,8 +7,8 @@
  * target and every change is announced by its card. The GM's own code calls runOps directly.
  *
  * Operations:
- * - {type: "status", uuid, id, active = true, rounds?, flags?} — turn a status effect on or off; rounds and flags
- *   are stored on the effect (flags «dark-heresy.*»).
+ * - {type: "status", uuid, id, active = true, rounds?, flags?, name?} — turn a status effect on or off; rounds and
+ *   flags are stored on the effect (flags «dark-heresy.*»), name renames it.
  * - {type: "fatigue", uuid, delta} — add (or remove) levels of fatigue.
  * - {type: "damage", uuid, damages, attack} — Actor#applyDamage.
  * - {type: "spend", speaker: {token, actor}, halves} — half actions of the current combatant.
@@ -39,11 +39,19 @@ export function statusEffectOf(actor, id) {
 }
 
 const OPS = {
-    async status({ uuid, id, active = true, rounds, flags }) {
+    async status({ uuid, id, active = true, rounds, flags, name }) {
         const actor = await actorFrom(uuid);
         if (!actor) return;
         const has = actor.statuses.has(id);
-        if (active && !has) await actor.toggleStatusEffect(id, { active: true, overlay: id === "dead" });
+        if (active && !has && (flags || name)) {
+            // Create the effect with its data at once (createActiveEffect listeners see the flags)
+            const effect = await ActiveEffect.implementation.fromStatusEffect(id, { parent: actor });
+            const data = foundry.utils.mergeObject(effect.toObject(), { flags: { "dark-heresy": flags ?? {} } });
+            if (name) data.name = name;
+            await ActiveEffect.implementation.create(data, { parent: actor, keepId: true });
+            flags = undefined;
+            name = undefined;
+        } else if (active && !has) await actor.toggleStatusEffect(id, { active: true, overlay: id === "dead" });
         else if (!active && has) await actor.toggleStatusEffect(id, { active: false });
         if (!active) return;
         const effect = statusEffectOf(actor, id);
@@ -55,6 +63,7 @@ const OPS = {
             if (!has || current === undefined || rounds > current) changes["flags.dark-heresy.rounds"] = rounds;
         }
         for (const [key, value] of Object.entries(flags ?? {})) changes[`flags.dark-heresy.${key}`] = value;
+        if (name) changes.name = name;
         if (Object.keys(changes).length) await effect.update(changes);
     },
 

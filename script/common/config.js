@@ -264,6 +264,12 @@ CONFIG.statusEffects = [
         img: "systems/dark-heresy/asset/icons/unconscious.png"
     },
     {
+        id: "cover",
+        statuses: ["cover"],
+        name: "CONDITION.COVER",
+        img: "icons/svg/shield.svg"
+    },
+    {
         id: "dead",
         statuses: ["dead"],
         name: "EFFECT.StatusDead", // Foundry Default Text Key

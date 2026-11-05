@@ -25,7 +25,7 @@
  *   options (Half): break free (opposed Strength), slip free (Acrobatics), take control (opposed Strength).
  *   The bigger participant gets an extra degree of success per size step on successful grapple tests.
  * - Delay, Overwatch, Tactical Advance, Disengage (Full), Stand Up (Half): the cost and a reminder card;
- *   standing up removes the prone condition.
+ *   standing up removes the prone condition. Cover: take or change cover (cover.js), no cost of its own.
  * Opposed tests (p. 28): the one who passes wins; both pass — more degrees, then the higher characteristic
  * bonus, then the lower roll; both fail — nobody wins. The initiator's client rolls for both sides.
  * Effects on documents go through the active GM (ops.js).
@@ -34,6 +34,7 @@ import { postWithOps } from "./ops.js";
 import { card, ownModifiers, recordOfActor, combatantOfActor, grappleOf } from "./conditions.js";
 import { actionsOf, spentHalves, halvesPerTurn } from "./actions.js";
 import { applySituationalModifiers } from "./situational.js";
+import { takeCover } from "./cover.js";
 
 const esc = s => foundry.utils.escapeHTML(String(s ?? ""));
 const loc = key => game.i18n.localize(key);
@@ -536,6 +537,7 @@ const ACTIONS = [
     { id: "GRAPPLE_CONTROL", cost: 1, when: held, run: grappleControl },
     { id: "STAND_UP", cost: 1, when: a => prone(a) && !grappling(a),
         run: reminder("STAND_UP", 1, actor => [{ type: "status", uuid: actor.uuid, id: "prone", active: false }]) },
+    { id: "COVER", cost: 0, when: a => !grappling(a), run: takeCover },
     { id: "DELAY", cost: 2, when: a => !grappling(a), run: reminder("DELAY", 2) },
     { id: "OVERWATCH", cost: 2, when: a => !grappling(a), run: reminder("OVERWATCH", 2) },
     { id: "TACTICAL_ADVANCE", cost: 2, when: a => !grappling(a), run: reminder("TACTICAL_ADVANCE", 2) },
