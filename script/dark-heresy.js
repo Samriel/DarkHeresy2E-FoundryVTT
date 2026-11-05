@@ -37,6 +37,7 @@ import DarkHeresyUtil from "./common/util.js";
 import { registerTablesApi, registerTablesSocket } from "./common/tables.js";
 import { registerPinning } from "./common/pinning.js";
 import { registerMedicae, firstAid } from "./common/medicae.js";
+import { registerRequisition, registerRequisitionSocket, requisition, subtletyPanel, subtletyTest } from "./common/requisition.js";
 import DhMacroUtil from "./common/macro.js";
 import Dh from "./common/config.js";
 
@@ -66,6 +67,9 @@ Hooks.once("init", function() {
             combatRoll
         },
         firstAid,
+        requisition,
+        subtletyPanel,
+        subtletyTest
     };
     registerQualities();
     registerWeapons({ prepareCommonRoll, replaceSymbols,
@@ -73,6 +77,7 @@ Hooks.once("init", function() {
     registerTablesApi();
     registerPinning();
     registerMedicae();
+    registerRequisition();
     game.macro = DhMacroUtil;
     const sheets = foundry.applications.apps.DocumentSheetConfig;
     sheets.unregisterSheet(Actor, "core", foundry.appv1.sheets.ActorSheet);
@@ -128,6 +133,7 @@ Hooks.once("ready", function() {
     registerDamageSocket();
     registerAreas();
     registerTablesSocket();
+    registerRequisitionSocket();
     CONFIG.ChatMessage.documentClass.prototype.getRollData = function() {
         return this.getFlag("dark-heresy", "rollData");
     };

@@ -1,0 +1,28 @@
+<div class="dark-heresy chat roll requisition">
+    <div class="background border">
+        <h1>{{localize "REQUISITION.NAME"}}: {{item}}{{#unless automatic}} ({{target}}){{/unless}}</h1>
+        {{#if automatic}}
+            <h3 style="color: var(--color-success)">{{localize "CHAT.SUCCESS"}}</h3>
+        {{else if success}}
+            <h3 style="color: var(--color-success)">{{localize "CHAT.SUCCESS"}} <span>({{result}})</span></h3>
+        {{else}}
+            <h3 style="color: var(--color-failure)">{{localize "CHAT.FAILURE"}} <span>({{result}})</span></h3>
+        {{/if}}
+        <p><strong>{{localize "REQUISITION.WHO"}}:</strong> {{actor}}{{#if inquisitor}} — {{localize "REQUISITION.INQUISITOR"}}{{/if}}</p>
+        <p><strong>{{localize "REQUISITION.CRAFTSMANSHIP"}}:</strong> {{craftsmanship}}</p>
+        {{#each mods}}
+            <p>{{label}}: {{value}}</p>
+        {{/each}}
+        {{#unless automatic}}
+            <p><strong>{{localize "CHAT.TEST_MODIFIER"}}:</strong> {{modifier}}</p>
+        {{/unless}}
+        {{#if success}}
+            <p><strong>{{localize "CHAT.DOS"}}:</strong> {{dos}}</p>
+        {{else}}
+            <p><strong>{{localize "CHAT.DOF"}}:</strong> {{dof}}</p>
+        {{/if}}
+        {{#each lines}}
+            <p>{{this}}</p>
+        {{/each}}
+    </div>
+</div>

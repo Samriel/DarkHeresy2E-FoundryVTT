@@ -177,7 +177,7 @@ async function onCombatUpdate(combat, changes) {
     const link = { sceneId: combatant.sceneId ?? combat.scene?.id ?? null, tokenId: combatant.tokenId, actorId: combatant.actorId };
     const dieHard = hasItem(actor, "talent", DIE_HARD);
     const fatigue = dieHard ? null : await addFatigue(actor);
-    const content = await renderTemplate("systems/dark-heresy/template/chat/bleeding.hbs", { name, dieHard, fatigue });
+    const content = await foundry.applications.handlebars.renderTemplate("systems/dark-heresy/template/chat/bleeding.hbs", { name, dieHard, fatigue });
     await ChatMessage.create({ content, speaker: ChatMessage.getSpeaker({ actor }),
         flags: { "dark-heresy": { bleeding: link } } });
 }
