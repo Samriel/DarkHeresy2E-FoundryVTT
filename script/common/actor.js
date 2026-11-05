@@ -59,8 +59,9 @@ export class DarkHeresyActor extends Actor {
             const unnatural = Math.max(Number(characteristic.unnatural) || 0, traitUnnatural[key] || 0);
             characteristic.total = characteristic.base + characteristic.advance;
             characteristic.bonus = Math.floor(characteristic.total / 10) + unnatural;
-            // Fatigued characteristic: bonus below the fatigue level counts half (core p. 287)
-            characteristic.fatigued = this.fatigue.value > characteristic.bonus;
+            // Fatigued characteristic: bonus below the fatigue level counts half (core p. 287);
+            // Influence is not one of the characteristics
+            characteristic.fatigued = key !== "influence" && this.fatigue.value > characteristic.bonus;
             if (characteristic.fatigued) {
                 characteristic.total = Math.ceil(characteristic.total / 2);
                 characteristic.bonus = Math.floor(characteristic.total / 10) + unnatural;

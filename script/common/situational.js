@@ -14,9 +14,12 @@
  *   helpless by themselves. Shooting into melee ignores −20 if anyone in that melee is stunned,
  *   helpless or unaware (p. 283).
  * - Weapon Training: −20 without the talent for the weapon (weapons.js), with or without a target.
+ * - Target in Defensive Stance: −20 to melee attacks (p. 269). Grappled target: +20 to melee attacks of
+ *   anyone but its grapple partner (p. 281).
  */
 import { sizeHitModifier } from "./traits.js";
 import { applyTrainingModifier } from "./weapons.js";
+import { recordOfActor, grappleOf } from "./conditions.js";
 
 // Token statuses (CONFIG.statusEffects ids)
 const HELPLESS = ["unconscious", "helpless"];
@@ -115,6 +118,15 @@ export function applySituationalModifiers(rollData, actor) {
     if (hasStatus(target.actor, HELPLESS) && rollData.weapon.isMelee) {
         rollData.helplessTarget = true;
         notes.push(game.i18n.format("TARGET_STATE.HELPLESS_NOTE", { name: target.name }));
+    }
+    if (rollData.weapon.isMelee && recordOfActor(target.actor).stance === "defensive") {
+        modifier -= 20;
+        notes.push(game.i18n.format("TARGET_STATE.DEFENSIVE_NOTE", { name: target.name }));
+    }
+    const grapple = grappleOf(target.actor);
+    if (rollData.weapon.isMelee && hasStatus(target.actor, ["grappled"]) && grapple?.partnerUuid !== actor?.uuid) {
+        modifier += 20;
+        notes.push(game.i18n.format("TARGET_STATE.GRAPPLED_NOTE", { name: target.name }));
     }
     if (attacker && attacker !== target) {
         const dist = distance(attacker, target);

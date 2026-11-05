@@ -56,7 +56,24 @@ export function recordOfActor(actor) {
     return actionsOf(combatantOfActor(actor));
 }
 
-const signed = n => (n > 0 ? `+${n}` : `${n}`);
+/**
+ * The grapple an actor is in: partner (actor uuid) and whether he controls it (flag on the grappled effect).
+ * @param {Actor} actor
+ * @returns {{partnerUuid: string, controller: boolean}|null}
+ */
+export function grappleOf(actor) {
+    const flag = statusEffectOf(actor, "grappled")?.getFlag("dark-heresy", "grapple");
+    return flag?.partner ? { partnerUuid: flag.partner, controller: Boolean(flag.controller) } : null;
+}
+
+/**
+ * Token id of the target the actor has won a Feint against this turn (p. 270), if any.
+ * @param {Actor} actor
+ * @returns {string|null}
+ */
+export function feintTarget(actor) {
+    return recordOfActor(actor).feint ?? null;
+}
 
 /**
  * Kind of a roll for own-condition modifiers.

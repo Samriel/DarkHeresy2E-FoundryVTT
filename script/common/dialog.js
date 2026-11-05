@@ -2,7 +2,7 @@ import { commonRoll, combatRoll, reportEmptyClip } from "./roll.js";
 import { applySituationalModifiers } from "./situational.js";
 import { weaponReady } from "./weapons.js";
 import { SUPPRESSION, canSuppress, applyPinnedPenalty } from "./pinning.js";
-import { applyOwnConditions, rollActor } from "./conditions.js";
+import { applyOwnConditions, rollActor, feintTarget } from "./conditions.js";
 import { psychicDialogInfo } from "./psychic.js";
 import { offerFateBonus, applyFateBonus } from "./fate.js";
 
@@ -121,6 +121,10 @@ export async function prepareCombatRoll(rollData, actorRef) {
                             text: attackType?.options[attackType.selectedIndex].text,
                             modifier: 0
                         };
+                        // Standard Attack after a won Feint: the target cannot evade it (core p. 270)
+                        const feint = rollData.attackType.name === "standard" ? feintTarget(rollActor(rollData) ?? actorRef) : null;
+                        if (feint && game.user.targets.size === 1 && [...game.user.targets][0].id === feint) rollData.feint = feint;
+                        else delete rollData.feint;
                         const calledShot = html.find("#calledShot")[0];
                         rollData.calledShot = attackType?.value === "called_shot" && calledShot
                             ? game.darkHeresy.config.hitLocations[calledShot.value] : null;

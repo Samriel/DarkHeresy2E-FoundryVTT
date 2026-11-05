@@ -3,6 +3,7 @@ import DarkHeresyUtil from "../../common/util.js";
 import { setSustained } from "../../common/psychic.js";
 import { fateDialog } from "../../common/fate.js";
 import { rollMindTable, chooseDisorder, suppressDisorder } from "../../common/mind.js";
+import { combatActionMenu } from "../../common/combat-actions.js";
 
 export class DarkHeresySheet extends foundry.appv1.sheets.ActorSheet {
     activateListeners(html) {
@@ -78,6 +79,12 @@ export class DarkHeresySheet extends foundry.appv1.sheets.ActorSheet {
                     class: "custom-roll",
                     icon: "fas fa-dice",
                     onclick: async () => await this._prepareCustomRoll()
+                },
+                {
+                    label: game.i18n.localize("COMBAT_ACTION.MENU"),
+                    class: "combat-action",
+                    icon: "fa-solid fa-person-running",
+                    onclick: async () => await combatActionMenu(this.actor)
                 }
             ].concat(buttons);
         }
