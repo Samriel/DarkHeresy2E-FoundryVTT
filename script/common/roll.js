@@ -1,4 +1,5 @@
-import { PlaceableTemplate } from "./placeable-template.js";
+import { blastArea, sprayArea, sprayJammed } from "./area.js";
+import { qualityValue } from "./qualities.js";
 
 /**
  * Roll a generic roll, and post the result to chat.
@@ -23,15 +24,15 @@ export async function commonRoll(rollData) {
  * @param {object} rollData
  */
 export async function combatRoll(rollData) {
-    if (rollData.weapon.traits.spray && game.settings.get("dark-heresy", "useSpraytemplate")) {
-        let template = PlaceableTemplate.cone({ item: rollData.itemId, actor: rollData.ownerId },
-            30, rollData.weapon.range);
-        await template.drawPreview();
+    const special = rollData.weapon.special ?? "";
+    if (rollData.weapon.traits.spray && !rollData.isReRoll) {
+        rollData.area = await sprayArea(rollData);
     }
     if (rollData.weapon.traits.skipAttackRoll) {
         rollData.attackResult = 5; // Attacks that skip the hit roll always hit body; 05 reversed 50 = body
         rollData.flags.isDamageRoll = true;
         await _rollDamage(rollData);
+        if (rollData.weapon.traits.spray) rollData.sprayJam = sprayJammed(rollData.damages);
         await _updateRangedAmmo(rollData);
         await sendDamageToChat(rollData);
     } else {
@@ -48,6 +49,8 @@ export async function combatRoll(rollData) {
             rollData.attackType,
             rollData.shotsFired,
             rollData.weapon.traits);
+        const blast = Number(qualityValue(special, "blast")) || 0;
+        if (blast && !rollData.flags.isEvasion) rollData.area = await blastArea(rollData, blast);
         await _sendRollToChat(rollData);
     }
 }

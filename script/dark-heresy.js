@@ -30,6 +30,7 @@ import { registerMovement } from "./common/movement.js";
 import { registerActions } from "./common/actions.js";
 import { registerTraits } from "./common/traits.js";
 import { registerQualities } from "./common/qualities.js";
+import { registerAreas } from "./common/area.js";
 import DhMacroUtil from "./common/macro.js";
 import Dh from "./common/config.js";
 
@@ -104,14 +105,7 @@ Hooks.once("init", function() {
         default: false,
         type: Boolean
     });
-    game.settings.register("dark-heresy", "useSpraytemplate", {
-        name: "Use Template with Spray Weapons",
-        hint: "If enabled, Spray Weapons will require the user to put down a template before the roll is made. Templates are NOT removed automatically",
-        scope: "client",
-        config: true,
-        default: true,
-        type: Boolean
-    });
+    // «useSpraytemplate» removed: spray cones are placed by script/common/area.js
 
     registerAdditionalModuleSettings();
 });
@@ -119,6 +113,7 @@ Hooks.once("init", function() {
 Hooks.once("ready", function() {
     migrateWorld();
     registerDamageSocket();
+    registerAreas();
     CONFIG.ChatMessage.documentClass.prototype.getRollData = function() {
         return this.getFlag("dark-heresy", "rollData");
     };

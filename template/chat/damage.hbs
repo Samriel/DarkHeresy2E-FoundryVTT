@@ -16,7 +16,13 @@
 	    {{#if weapon.special}}
 	    <p><strong>{{localize "CHAT.QUALITIES"}}:</strong> {{dhQualities weapon.special}}</p>
 	    {{/if}}
+	    {{#if sprayJam}}
+	    <p><strong style="color: var(--color-failure)">{{localize "AREA.SPRAY_JAM"}}</strong></p>
+	    {{/if}}
 	    <div class="wrapper flex-column">
+	        {{#if weapon.traits.spray}}
+	        <button class="spray-dodge">{{localize "AREA.SPRAY_DODGE"}}</button>
+	        {{/if}}
 	        <button class="apply-damage-targets">{{localize "CHAT.APPLY_DAMAGE_TARGETS"}}</button>
 	    </div>
 	    <div class="dice-rolls" style="display:none">

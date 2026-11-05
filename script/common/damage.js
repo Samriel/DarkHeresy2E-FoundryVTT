@@ -9,6 +9,7 @@
 
 import { applyAttackQualities } from "./qualities.js";
 import { traitRating } from "./traits.js";
+import { deleteAreas } from "./area.js";
 
 const SOCKET = "system.dark-heresy";
 
@@ -68,7 +69,9 @@ export async function onApplyToTargetsClick(event) {
 export async function applyToActors(message, tokens) {
     const payload = message && damagePayload(message);
     if (!payload) return;
+    const evaded = new Set(message.getFlag("dark-heresy", "evaded") ?? []);
     for (const token of tokens) {
+        if (evaded.has(token.id) || evaded.has(token.actor?.id)) continue;
         const actor = token.actor;
         if (!actor) continue;
         const request = { ...payload, sceneId: token.document.parent?.id, tokenId: token.id,
@@ -77,6 +80,8 @@ export async function applyToActors(message, tokens) {
         else if (game.users.activeGM) game.socket.emit(SOCKET, { type: "applyDamage", request });
         else ui.notifications.warn(game.i18n.format("DAMAGE.NO_GM", { name: token.name }));
     }
+    const regionId = message.getRollData()?.area?.regionId;
+    if (regionId) await deleteAreas(r => r.id === regionId);
 }
 
 /**

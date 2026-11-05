@@ -23,6 +23,9 @@
             <p><strong>{{localize "CHAT.ATTACK_RANGE"}}:</strong> {{rangeModText}}</p>
         {{/if}}
 
+        {{#if area.scatter}}
+            <p><strong>{{localize "AREA.SCATTER"}}:</strong> {{area.scatter.direction}} / {{area.scatter.distance}} m</p>
+        {{/if}}
         {{#if attackType}}
             <p><strong>{{localize "CHAT.ATTACK_TYPE"}}:</strong> {{attackType.text}}</p>
         {{/if}}
@@ -53,6 +56,11 @@
             {{#if flags.isSuccess}}
                 <div class="wrapper flex-column">
                     <button class="invoke-test">{{localize "CHAT.ROLL_EVASION"}}</button>
+                    <button class="invoke-damage">{{localize "CHAT.ROLL_DAMAGE"}}</button>
+                </div>
+            {{else if area}}
+                {{!-- a missed blast still goes off where it scattered --}}
+                <div class="wrapper flex-column">
                     <button class="invoke-damage">{{localize "CHAT.ROLL_DAMAGE"}}</button>
                 </div>
             {{/if}}

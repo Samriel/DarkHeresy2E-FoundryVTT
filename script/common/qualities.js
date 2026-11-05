@@ -15,6 +15,8 @@
 
 const KEYS = {
     graviton: /^(?:гравитонн|graviton)/i,
+    blast: /^(?:взрыв|blast)/i,
+    spray: /^(?:распыля|spray)/i,
     felling: /^(?:разящ|подрубающ|felling)/i,
     daemonbane: /^(?:погибель демонов|daemonbane)/i,
     sanctified: /^(?:освящ[её]нн|освещ[её]нн|sanctified)/i,

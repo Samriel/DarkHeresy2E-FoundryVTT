@@ -63,7 +63,8 @@ export default class DarkHeresyUtil {
             isRange: !isMelee,
             clip: weaponItem.clip,
             rateOfFire: rateOfFire,
-            range: !isMelee ? weaponItem.range : 0,
+            // Thrown weapons without their own range: SB × 3 (core weapon tables)
+            range: isMelee ? 0 : (weaponItem.range || (weaponItem.class === "thrown" ? actor.characteristics.strength.bonus * 3 : 0)),
             damageFormula: weaponItem.damage + attributeMod + (weaponTraits.force ? "+PR" : ""),
             penetrationFormula: weaponItem.penetration + (weaponTraits.force ? "+PR" : ""),
             ammos: weaponItem.system.ammoItems,
