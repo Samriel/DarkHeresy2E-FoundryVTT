@@ -28,6 +28,7 @@ import { chatListeners } from "./common/chat.js";
 import { registerDamageSocket } from "./common/damage.js";
 import { registerMovement } from "./common/movement.js";
 import { registerActions } from "./common/actions.js";
+import { registerTraits } from "./common/traits.js";
 import DhMacroUtil from "./common/macro.js";
 import Dh from "./common/config.js";
 
@@ -44,6 +45,7 @@ Hooks.once("init", function() {
     CONFIG.ActiveEffect.legacyTransferral = false;
     registerMovement();
     registerActions();
+    registerTraits();
     game.darkHeresy = {
         config: Dh,
         testInit: {

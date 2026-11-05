@@ -27,6 +27,8 @@ function damagePayload(message) {
         messageId: message.id,
         source: rollData.itemName ?? rollData.name ?? "",
         special: rollData.weapon?.special ?? "",
+        attack: { psychic: Boolean(rollData.psy?.display), special: rollData.weapon?.special ?? "",
+            attackerId: rollData.ownerId ?? null },
         damages: rollData.damages.map(d => ({
             amount: Number(d.total) || 0,
             location: d.location,
@@ -89,7 +91,7 @@ async function applyDamageRequest(request) {
     const actor = requestActor(request);
     if (!actor) return;
     const blocked = await rollForceField(actor, request);
-    if (!blocked) await actor.applyDamage(request.damages);
+    if (!blocked) await actor.applyDamage(request.damages, request.attack);
 }
 
 /**

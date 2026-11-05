@@ -1,4 +1,5 @@
 import { commonRoll, combatRoll, reportEmptyClip } from "./roll.js";
+import { sizeHitModifier } from "./traits.js";
 
 /**
  * Show a generic roll dialog.
@@ -62,6 +63,14 @@ export async function prepareCombatRoll(rollData, actorRef) {
     if (rollData.weapon.isRange && rollData.weapon.clip.value <= 0) {
         reportEmptyClip(rollData);
     } else {
+        // Size of the single targeted token (table 4-6) goes into the modifier
+        const target = game.user.targets.size === 1 ? [...game.user.targets][0] : null;
+        const sizeMod = target?.actor ? sizeHitModifier(target.actor) : 0;
+        if (sizeMod) {
+            rollData.target.modifier = (Number(rollData.target.modifier) || 0) + sizeMod;
+            rollData.sizeNote = game.i18n.format("SIZE.HIT_NOTE", { name: target.name,
+                modifier: sizeMod > 0 ? `+${sizeMod}` : `${sizeMod}` });
+        }
         const html = await renderTemplate("systems/dark-heresy/template/dialog/combat-roll.hbs", rollData);
         let dialog = new Dialog({
             title: rollData.name,

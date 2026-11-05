@@ -2,6 +2,7 @@ import { commonRoll, combatRoll, damageRoll } from "./roll.js";
 import { prepareCommonRoll } from "./dialog.js";
 import DarkHeresyUtil from "./util.js";
 import { onApplyToTargetsClick, applyToActors } from "./damage.js";
+import { onFearClick } from "./traits.js";
 
 
 /**
@@ -13,6 +14,7 @@ export function chatListeners(html) {
     html.querySelectorAll(".invoke-test")?.forEach(button => button.addEventListener("click", event => onTestClick(event)));
     html.querySelectorAll(".invoke-damage")?.forEach(button => button.addEventListener("click", event => onDamageClick(event)));
     html.querySelectorAll(".apply-damage-targets")?.forEach(button => button.addEventListener("click", event => onApplyToTargetsClick(event)));
+    html.querySelectorAll(".invoke-fear")?.forEach(button => button.addEventListener("click", event => onFearClick(event, prepareCommonRoll, DarkHeresyUtil)));
     html.querySelectorAll(".reload-Weapon")?.forEach(button => button.addEventListener("click", event => onReloadClick(event)));
     html.querySelectorAll(".dark-heresy.chat.roll>.background.border")?.forEach(button => button.addEventListener("dblclick", event => onChatRollClick(event)));
 }

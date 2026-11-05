@@ -1,3 +1,5 @@
+import { traitRating, traitArmour, unnaturalRatings, daemonicApplies } from "./traits.js";
+
 export class DarkHeresyActor extends Actor {
 
     async _preCreate(data, options, user) {
@@ -27,6 +29,8 @@ export class DarkHeresyActor extends Actor {
         super.prepareDerivedData();
         this._computeExperience();
         this._computeArmour();
+        const size = traitRating(this, "size");
+        if (size) this.system.size = size;
         this._computeMovement();
         this._computeItems();
     }
@@ -34,12 +38,15 @@ export class DarkHeresyActor extends Actor {
     _computeCharacteristics() {
         let middle = Object.values(this.characteristics).length / 2;
         let i = 0;
-        for (let characteristic of Object.values(this.characteristics)) {
+        const traitUnnatural = unnaturalRatings(this);
+        for (let [key, characteristic] of Object.entries(this.characteristics)) {
+            // Unnatural Characteristic trait counts if it is higher than the value typed on the sheet
+            const unnatural = Math.max(Number(characteristic.unnatural) || 0, traitUnnatural[key] || 0);
             characteristic.total = characteristic.base + characteristic.advance;
-            characteristic.bonus = Math.floor(characteristic.total / 10) + characteristic.unnatural;
+            characteristic.bonus = Math.floor(characteristic.total / 10) + unnatural;
             if (this.fatigue.value > characteristic.bonus) {
                 characteristic.total = Math.ceil(characteristic.total / 2);
-                characteristic.bonus = Math.floor(characteristic.total / 10) + characteristic.unnatural;
+                characteristic.bonus = Math.floor(characteristic.total / 10) + unnatural;
             }
             characteristic.isLeft = i < middle;
             characteristic.isRight = i >= middle;
@@ -235,6 +242,10 @@ export class DarkHeresyActor extends Actor {
                 });
             });
 
+        // Natural Armour / Machine traits stack with worn armour
+        const natural = traitArmour(this);
+        locations.forEach(location => maxArmour[location] += natural);
+
         this.armour.head.value = maxArmour.head;
         this.armour.leftArm.value = maxArmour.leftArm;
         this.armour.rightArm.value = maxArmour.rightArm;
@@ -394,7 +405,8 @@ export class DarkHeresyActor extends Actor {
      * @param {number} damages.righteousFury Amount rolled on the righteous fury die, defaults to 0
      * @returns {Promise<Actor>}             A Promise which resolves once the damage has been applied
      */
-    async applyDamage(damages) {
+    async applyDamage(damages, attack) {
+        const daemonic = daemonicApplies(attack) ? traitRating(this, "daemonic") : 0;
         let wounds = this.wounds.value;
         let criticalWounds = this.wounds.critical;
         const damageTaken = [];
@@ -406,7 +418,7 @@ export class DarkHeresyActor extends Actor {
             let armour = Math.max(this._getArmour(damage.location) - Number(damage.penetration), 0);
             // Reduce damage by toughness bonus
             const damageMinusToughness = Math.max(
-                Number(damage.amount) - this.system.characteristics.toughness.bonus, 0
+                Number(damage.amount) - this.system.characteristics.toughness.bonus - daemonic, 0
             );
 
             // Calculate wounds to add, reducing damage by armour after pen
