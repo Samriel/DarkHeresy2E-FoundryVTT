@@ -15,8 +15,8 @@
  *   daemonic ones +10 per pushed point (max +30), and perils hit everyone but them; +10 per sustained power after
  *   the first; Warp Conduit +30 (p. 150). 75+ on table 6-2 rolls table 6-3. Favoured by the Warp (p. 145): a
  *   result other than perils may be rolled again, the player chooses.
- * - Fear (p. 349, table 8-11): a failed fear test in combat rolls Shock at +10 per degree of failure after the
- *   first; failing by three or more degrees also gives 1d5 insanity points. Outside combat the character is
+ * - Fear (p. 349, table 8-11): a failed fear test in combat rolls Shock at +10 per degree of failure (house rule:
+ *   the book counts degrees after the first); failing by three or more degrees also gives 1d5 insanity points. Outside combat the character is
  *   shaken (−10 to tests requiring concentration).
  * Conditions a row imposes unconditionally are offered as buttons; nothing is applied automatically.
  */
@@ -270,7 +270,7 @@ export async function fearConsequences(rollData) {
     const rolls = [];
     let shock = null;
     if (combat) {
-        const modifier = 10 * Math.max(0, dof - 1);
+        const modifier = 10 * dof; // house rule: every degree of failure, not only those after the first
         const roll = await new Roll(`1d100 + ${modifier}`).evaluate();
         rolls.push(roll);
         shock = resultView("shock", roll.total, TABLE_NUMBER.shock);
