@@ -88,6 +88,7 @@ export default class DarkHeresyUtil {
         });
         rollData.weapon.traits.skipAttackRoll = false;
         rollData.attackType.name = power.damage.zone;
+        rollData.powerAction = power.action;
         rollData.psy = {
             value: actor.psy.rating,
             rating: actor.psy.rating,

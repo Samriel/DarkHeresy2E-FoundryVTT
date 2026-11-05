@@ -1,0 +1,22 @@
+// Half-action and reaction pips in the combat tracker (script/common/actions.js)
+.dh-actions {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  margin: 0 4px;
+  flex: 0 0 auto;
+
+  .dh-pip {
+    width: 10px;
+    height: 10px;
+    border: 1px solid var(--color-text-secondary, #999);
+    background: transparent;
+    cursor: pointer;
+
+    &.half { border-radius: 50%; }
+    &.reaction { transform: rotate(45deg); width: 8px; height: 8px; margin-left: 3px; }
+    &.spent { background: var(--color-text-secondary, #999); }
+  }
+
+  &.readonly .dh-pip { cursor: default; }
+}

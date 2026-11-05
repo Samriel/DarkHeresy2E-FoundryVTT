@@ -90,6 +90,7 @@ export async function prepareCombatRoll(rollData, actorRef) {
                         const aim = html.find("#aim")[0];
                         rollData.aim = {
                             val: parseInt(aim?.value, 10),
+                            base: parseInt(aim?.value, 10), // chosen aim before Accurate/Inaccurate, for the action cost
                             isAiming: aim?.value !== "0",
                             text: aim?.options[aim.selectedIndex].text
                         };

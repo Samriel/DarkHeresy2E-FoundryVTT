@@ -27,6 +27,7 @@ import { commonRoll, combatRoll } from "./common/roll.js";
 import { chatListeners } from "./common/chat.js";
 import { registerDamageSocket } from "./common/damage.js";
 import { registerMovement } from "./common/movement.js";
+import { registerActions } from "./common/actions.js";
 import DhMacroUtil from "./common/macro.js";
 import Dh from "./common/config.js";
 
@@ -42,6 +43,7 @@ Hooks.once("init", function() {
     CONFIG.fontDefinitions["Caslon Antique"] = { editor: true, fonts: [] };
     CONFIG.ActiveEffect.legacyTransferral = false;
     registerMovement();
+    registerActions();
     game.darkHeresy = {
         config: Dh,
         testInit: {
