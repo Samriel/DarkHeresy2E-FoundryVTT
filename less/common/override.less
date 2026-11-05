@@ -75,11 +75,13 @@ width: fit-content !important;
 background-position: center;
 }
 
+/* The parchment background was removed for Foundry 14 (dark sidebar): follow the theme's text colour
+   instead of the old dark #333, which made directory and compendium entries unreadable */
 #sidebar, .sidebar-popout,
 .app.sidebar-popout .window-content,
 li.folder > .folder-header h3,
 li.folder > .folder-header .create-folder, li.folder > .folder-header .create-entity {
-color: #333;
+color: var(--color-text-primary, #e7e6e3);
 }
 
 
