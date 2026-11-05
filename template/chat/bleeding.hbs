@@ -1,0 +1,16 @@
+<div class="dark-heresy chat roll">
+    <div class="background border">
+        <h1>{{localize "CONDITION.BLEEDING"}}: {{name}}</h1>
+        {{#if dieHard}}
+            <p>{{localize "MEDICAE.BLEEDING_DIE_HARD"}}</p>
+        {{else}}
+            <p>{{localize "MEDICAE.BLEEDING_FATIGUE"}}: <strong>{{fatigue}}</strong></p>
+        {{/if}}
+        <div class="wrapper flex-column">
+            {{#if dieHard}}
+                <button class="invoke-bleeding dh-tall" data-action="die-hard">{{localize "MEDICAE.DIE_HARD_ROLL"}}</button>
+            {{/if}}
+            <button class="invoke-bleeding dh-tall" data-action="stop">{{localize "MEDICAE.STOP_BLEEDING_ROLL"}}</button>
+        </div>
+    </div>
+</div>

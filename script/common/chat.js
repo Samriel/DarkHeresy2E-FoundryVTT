@@ -7,6 +7,7 @@ import { onSprayDodgeClick } from "./area.js";
 import { weaponChatListeners } from "./weapons.js";
 import { onApplyConditionClick, onPhenomenaClick } from "./tables.js";
 import { onPinningClick, onPinningRecoverClick } from "./pinning.js";
+import { onBleedingClick } from "./medicae.js";
 
 
 /**
@@ -29,6 +30,7 @@ export function chatListeners(html) {
     });
     html.querySelectorAll(".invoke-pinning")?.forEach(button => button.addEventListener("click", event => onPinningClick(event, prepareCommonRoll, DarkHeresyUtil)));
     html.querySelectorAll(".invoke-pinning-recover")?.forEach(button => button.addEventListener("click", event => onPinningRecoverClick(event, prepareCommonRoll, DarkHeresyUtil)));
+    html.querySelectorAll(".invoke-bleeding")?.forEach(button => button.addEventListener("click", event => onBleedingClick(event)));
     html.querySelectorAll(".reload-Weapon")?.forEach(button => button.addEventListener("click", event => onReloadClick(event)));
     html.querySelectorAll(".dark-heresy.chat.roll>.background.border")?.forEach(button => button.addEventListener("dblclick", event => onChatRollClick(event)));
 }

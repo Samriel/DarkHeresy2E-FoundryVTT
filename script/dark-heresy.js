@@ -36,6 +36,7 @@ import { replaceSymbols } from "./common/roll.js";
 import DarkHeresyUtil from "./common/util.js";
 import { registerTablesApi, registerTablesSocket } from "./common/tables.js";
 import { registerPinning } from "./common/pinning.js";
+import { registerMedicae, firstAid } from "./common/medicae.js";
 import DhMacroUtil from "./common/macro.js";
 import Dh from "./common/config.js";
 
@@ -64,12 +65,14 @@ Hooks.once("init", function() {
             commonRoll,
             combatRoll
         },
+        firstAid,
     };
     registerQualities();
     registerWeapons({ prepareCommonRoll, replaceSymbols,
         createCharacteristicRollData: (actor, key) => DarkHeresyUtil.createCharacteristicRollData(actor, key) });
     registerTablesApi();
     registerPinning();
+    registerMedicae();
     game.macro = DhMacroUtil;
     const sheets = foundry.applications.apps.DocumentSheetConfig;
     sheets.unregisterSheet(Actor, "core", foundry.appv1.sheets.ActorSheet);
