@@ -13,6 +13,7 @@
         <div class="item-list">
             <div class="flex header">
                 <b class="name">{{localize "INSANITY.MENTAL_DISORDER"}}</b>
+                <a class="dh-mind-header-btn mind-choose-disorder" title="{{localize "MIND.DISORDER_CHOOSE"}}"><i class="fas fa-book-open"></i></a>
                 <a class="button item-create" title="Add Mental Disorder" data-type="mentalDisorder"><i class="fas fa-plus"></i></a>
             </div>
             <div class="items">
@@ -25,6 +26,7 @@
                             <div class="name">{{item.name}}</div>
                         </div>
                         <div class="button">
+                            <a class="item-control mind-suppress" title="{{localize "MIND.SUPPRESS"}}"><i class="fas fa-dice"></i></a>
                             <a class="item-control item-delete" title="Delete Mental Disorder"><i class="fas fa-trash"></i></a>
                         </div>
                     </div>
@@ -63,6 +65,7 @@
         <div class="item-list">
             <div class="flex header">
                 <b class="name">{{localize "CORRUPTION.MALIGNANCY"}}</b>
+                <a class="dh-mind-header-btn mind-roll-table" data-kind="malignancy" title="{{localize "MIND.ROLL_malignancy"}}"><i class="fas fa-dice-d20"></i></a>
                 <a class="button item-create" title="Add Malignancy" data-type="malignancy"><i class="fas fa-plus"></i></a>
             </div>
             <div class="items">
@@ -84,6 +87,7 @@
         <div class="item-list">
             <div class="flex header">
                 <b class="name">{{localize "CORRUPTION.MUTATION"}}</b>
+                <a class="dh-mind-header-btn mind-roll-table" data-kind="mutation" title="{{localize "MIND.ROLL_mutation"}}"><i class="fas fa-dice-d20"></i></a>
                 <a class="button item-create" title="Add Mutation" data-type="mutation"><i class="fas fa-plus"></i></a>
             </div>
             <div class="items">

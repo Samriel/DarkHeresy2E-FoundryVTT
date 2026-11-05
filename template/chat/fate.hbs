@@ -1,0 +1,14 @@
+<div class="dark-heresy chat roll dh-fate-card">
+    <div class="background border">
+        <h1>{{#if burned}}{{localize "FATE_POINTS.BURNED_HEADER"}}{{else}}{{localize "FATE_POINTS.SPENT_HEADER"}}{{/if}}: {{name}}</h1>
+        <p><strong>{{purpose}}</strong>{{#if detail}} — {{detail}}{{/if}}</p>
+        {{#if reason}}<p><em>{{reason}}</em></p>{{/if}}
+        {{#each notes}}
+        <p>{{this}}</p>
+        {{/each}}
+        {{#if wasted}}
+        <p><strong style="color: var(--color-failure)">{{localize "FATE_POINTS.NO_EFFECT"}}</strong></p>
+        {{/if}}
+        <p class="dh-fate-state">{{localize "FATE"}}: {{value}} / {{max}}</p>
+    </div>
+</div>

@@ -17,9 +17,14 @@
  *   result other than perils may be rolled again, the player chooses.
  * - Fear (p. 349, table 8-11): a failed fear test in combat rolls Shock at +10 per degree of failure after the
  *   first; failing by three or more degrees also gives 1d5 insanity points. Outside combat the character is
- *   shaken (−10 to tests requiring concentration).
+ *   shaken (−10 to tests requiring concentration). Warp Shock (p. 353): insanity from the fear of a Warp entity
+ *   (Daemonic or Warp Instability source) also gives Corruption equal to its Fear rating.
+ * - A result that kills (condition «dead») offers burning Fate to the target when it has a Fate threshold
+ *   (fate.js, p. 357); a row with `noFateBurn` (perils 100+) does not.
  * Conditions a row imposes unconditionally are offered as buttons; nothing is applied automatically.
  */
+
+import { canBurnFate } from "./fate.js";
 
 const SOCKET = "system.dark-heresy";
 
@@ -61,13 +66,23 @@ export function tableRow(id, value) {
 }
 
 /**
+ * A registered table.
+ * @param {string} id
+ * @returns {object|undefined}
+ */
+export function getTable(id) {
+    return tables.get(id);
+}
+
+/**
  * Template data for one table result.
  * @param {string} id table id
  * @param {number} value the value looked up
  * @param {string} fallbackNumber table number shown when no texts are registered
+ * @param {Actor|null} [actor] the character the result applies to: a deadly result offers burning Fate
  * @returns {object}
  */
-function resultView(id, value, fallbackNumber) {
+export function resultView(id, value, fallbackNumber, actor = null) {
     const table = tables.get(id);
     const row = tableRow(id, value);
     const conditions = (row?.conditions ?? []).map(cid => {
@@ -84,8 +99,12 @@ function resultView(id, value, fallbackNumber) {
         name: row?.name ?? "",
         text: row?.text ?? "",
         hasText: Boolean(row),
+        min: row?.min ?? null,
+        row: row ?? null,
         next: row?.next ?? (!row && id === "phenomena" && value >= PERILS_FROM ? "perils" : null),
-        conditions
+        conditions,
+        // Burning Fate (core p. 357): a result that kills the character, unless the row forbids it
+        burn: Boolean(actor && !row?.noFateBurn && conditions.some(c => c.id === "dead") && canBurnFate(actor))
     };
 }
 
@@ -94,12 +113,13 @@ function resultView(id, value, fallbackNumber) {
  * @param {string} type damage letter (E, I, R, X)
  * @param {string} location armour location key (ARMOUR.BODY …)
  * @param {number} value total critical damage, or the Righteous Fury 1d5
+ * @param {Actor|null} [actor] the target (offers burning Fate on a deadly result)
  * @returns {object}
  */
-export function criticalEffect(type, location, value) {
+export function criticalEffect(type, location, value, actor = null) {
     const dtype = DAMAGE_KEY[String(type ?? "I").toUpperCase()] ?? "impact";
     const loc = LOCATION_KEY[location] ?? "body";
-    return resultView(`critical.${dtype}.${loc}`, Math.max(1, Number(value) || 1), CRITICAL_NUMBER[dtype][loc]);
+    return resultView(`critical.${dtype}.${loc}`, Math.max(1, Number(value) || 1), CRITICAL_NUMBER[dtype][loc], actor);
 }
 
 /* -------------------------------------------- */
@@ -194,7 +214,7 @@ export async function rollPhenomena(actor, { modifier = 0, perilsModifier = 0, p
     if (phenomena.next === "perils") {
         const perilsRoll = await new Roll(`1d100 + ${Number(perilsModifier) || 0}`).evaluate();
         rolls.push(perilsRoll);
-        perils = resultView("perils", perilsRoll.total, TABLE_NUMBER.perils);
+        perils = resultView("perils", perilsRoll.total, TABLE_NUMBER.perils, actor);
         perils.roll = perilsRoll.total;
         perils.modifier = Number(perilsModifier) || 0;
     }
@@ -289,6 +309,16 @@ export async function fearConsequences(rollData) {
             insanity.applied = true;
             insanity.total = after;
             insanity.trauma = Math.floor(after / 10) > Math.floor(before / 10);
+        }
+        // Warp Shock (p. 353): insanity from fear of a Warp entity also gives Corruption equal to its Fear rating
+        const rating = Number(rollData.fear?.rating) || 0;
+        if (rollData.fear?.warp && rating) {
+            insanity.warpShock = { points: rating, applied: false };
+            if (actor.type === "acolyte" && actor.isOwner) {
+                const total = (Number(actor.system.corruption) || 0) + rating;
+                await actor.update({ "system.corruption": total });
+                Object.assign(insanity.warpShock, { applied: true, total });
+            }
         }
     }
     const content = await foundry.applications.handlebars.renderTemplate("systems/dark-heresy/template/chat/shock.hbs", {

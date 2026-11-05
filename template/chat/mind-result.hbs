@@ -1,0 +1,18 @@
+<div class="dark-heresy chat roll">
+    <div class="background border">
+        <h1>{{title}}: {{name}}</h1>
+        <p><strong>{{localize "TABLES.ROLL"}}:</strong> {{roll}}{{#if modifier}} ({{localize "TABLES.INCLUDING"}} {{dhSigned modifier}}){{/if}}</p>
+        {{#each rerolled}}
+        <p><em>{{localize "MIND.REROLLED" roll=roll name=name}}</em></p>
+        {{/each}}
+        {{> "systems/dark-heresy/template/chat/table-result.hbs" result=result actorUuid=actorUuid}}
+        {{#if duration}}
+        <p><strong>{{localize "MIND.DURATION"}}:</strong> {{duration.total}} {{duration.unit}} ({{duration.formula}})</p>
+        {{/if}}
+        {{#if canAdd}}
+        <div class="wrapper flex-column">
+            <button type="button" class="dh-mind-add">{{localize "MIND.ADD_TO_SHEET"}}</button>
+        </div>
+        {{/if}}
+    </div>
+</div>

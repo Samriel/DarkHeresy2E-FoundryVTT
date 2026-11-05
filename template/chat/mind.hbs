@@ -7,7 +7,7 @@
         {{#if tests.length}}
         <div class="wrapper flex-column">
             {{#each tests}}
-                <button class="invoke-mind-test dh-tall" data-test="{{key}}">{{label}}</button>
+                <button class="invoke-mind-test dh-tall" data-test="{{key}}"{{#if severity}} data-severity="{{severity}}"{{/if}}>{{label}}</button>
             {{/each}}
         </div>
         {{/if}}

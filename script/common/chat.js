@@ -1,4 +1,4 @@
-import { commonRoll, combatRoll, damageRoll } from "./roll.js";
+import { commonRoll, combatRoll, damageRoll, addDegreesOfSuccess } from "./roll.js";
 import { prepareCommonRoll } from "./dialog.js";
 import DarkHeresyUtil from "./util.js";
 import { onApplyToTargetsClick, applyToActors } from "./damage.js";
@@ -11,6 +11,8 @@ import { onBleedingClick } from "./medicae.js";
 import { onMindTestClick } from "./corruption.js";
 import { confirmEvasion } from "./conditions.js";
 import { psychicChatListeners } from "./psychic.js";
+import { spendFate, fateAddDegree, canSpendOn, onBurnFateClick, rollActor } from "./fate.js";
+import { onMindTableClick, onMindAddClick } from "./mind.js";
 
 
 /**
@@ -36,6 +38,18 @@ export function chatListeners(html) {
     html.querySelectorAll(".invoke-bleeding")?.forEach(button => button.addEventListener("click", event => onBleedingClick(event)));
     html.querySelectorAll(".invoke-mind-test")?.forEach(button => button.addEventListener("click", event => onMindTestClick(event)));
     psychicChatListeners(html, prepareCommonRoll, DarkHeresyUtil);
+    html.querySelectorAll(".dh-burn-fate")?.forEach(button => {
+        if (message?.getFlag("dark-heresy", "fateBurned")) button.disabled = true;
+        button.addEventListener("click", event => onBurnFateClick(event));
+    });
+    html.querySelectorAll(".roll-mind-table")?.forEach(button => {
+        if (message?.getFlag("dark-heresy", "mindRolled")) button.disabled = true;
+        button.addEventListener("click", event => onMindTableClick(event));
+    });
+    html.querySelectorAll(".dh-mind-add")?.forEach(button => {
+        if (message?.getFlag("dark-heresy", "mindAdded")) button.disabled = true;
+        button.addEventListener("click", event => onMindAddClick(event));
+    });
     html.querySelectorAll(".reload-Weapon")?.forEach(button => button.addEventListener("click", event => onReloadClick(event)));
     html.querySelectorAll(".dark-heresy.chat.roll>.background.border")?.forEach(button => button.addEventListener("dblclick", event => onChatRollClick(event)));
 }
@@ -70,14 +84,13 @@ export const addChatMessageContextOptions = function(html, options) {
         }
     );
 
-    const reroll = li => rerollTest(game.messages.get(li.dataset.messageId).getRollData());
-    let canReroll = li => {
+    // Fate (core p. 357): re-roll any test, +1 degree of success to a successful one
+    const reroll = li => rerollTest(game.messages.get(li.dataset.messageId));
+    const canReroll = li => canSpendOn(game.messages.get(li.dataset.messageId));
+    const addDegree = li => fateAddDegree(game.messages.get(li.dataset.messageId), addDegreesOfSuccess);
+    const canAddDegree = li => {
         const message = game.messages.get(li.dataset.messageId);
-        let actor = game.actors.get(message.getRollData()?.ownerId);
-        return message.isRoll
-            && !message.getRollData()?.flags.isDamageRoll
-            && message.isContentVisible
-            && actor?.fate.value > 0;
+        return canSpendOn(message) && Boolean(message.getRollData()?.flags?.isSuccess);
     };
 
     options.unshift(
@@ -89,22 +102,37 @@ export const addChatMessageContextOptions = function(html, options) {
             condition: canReroll,
             onClick: (event, li) => reroll(li),
             callback: li => reroll(li)
+        },
+        {
+            label: game.i18n.localize("CHAT.CONTEXT.FATE_DEGREE"),
+            name: game.i18n.localize("CHAT.CONTEXT.FATE_DEGREE"),
+            icon: '<i class="fa-solid fa-angles-up"></i>',
+            visible: canAddDegree,
+            condition: canAddDegree,
+            onClick: (event, li) => addDegree(li),
+            callback: li => addDegree(li)
         }
     );
     return options;
 };
 
 /**
- * Rerolls the Test using the same Data as the initial Roll while reducing an actors fate
- * @param {object} rollData
+ * Rerolls the Test using the same Data as the initial Roll while spending a Fate point of the actor
+ * (an Unlucky character may waste the point, see fate.js)
+ * @param {ChatMessage} message
  * @returns {Promise}
  */
-function rerollTest(rollData) {
-    let actor = game.actors.get(rollData.ownerId);
-    actor.update({ "system.fate.value": actor.fate.value -1 });
+async function rerollTest(message) {
+    const rollData = message.getRollData();
+    const actor = rollActor(rollData);
+    const spent = await spendFate(actor, "reroll", { detail: rollData.name ?? "" });
+    if (!spent?.effective) return;
     delete rollData.damages; // Reset so no old data is shown on failure
+    delete rollData.fateDegrees;
+    delete rollData.fateBonus;
 
     rollData.flags.isReRoll = true;
+    rollData.isReRoll = true;
     if (rollData.flags.isCombatRoll) {
     // All the regexes in this are broken once retrieved from the chatmessage
     // No idea why this happens so we need to fetch them again so the roll works correctly
@@ -141,6 +169,7 @@ async function onTestClick(ev) {
     rollData.evasions = evasions;
     rollData.target.modifier = 0;
     rollData.flags.isEvasion = true;
+    rollData.evader = { actorId: actor.id, tokenId: actor.token?.id ?? null }; // whose Fate the evasion uses
     rollData.flags.isAttack = false;
     rollData.flags.isDamageRoll = false;
     rollData.flags.isCombatRoll = false;

@@ -567,9 +567,9 @@ export class DarkHeresyActor extends Actor {
         const troop = this.type === "npc" && this.system.type === "troop";
         for (const roll of rolls) {
             if (roll.source === "Critical" && roll.damage > 0) {
-                roll.effect = criticalEffect(roll.type, roll.location, roll.total);
+                roll.effect = criticalEffect(roll.type, roll.location, roll.total, this);
             } else if (roll.source === "Critical Effect (RF)") {
-                roll.effect = criticalEffect(roll.type, roll.location, roll.damage);
+                roll.effect = criticalEffect(roll.type, roll.location, roll.damage, this);
                 roll.righteousFury = true;
                 roll.troopDies = troop;
             }

@@ -9,7 +9,8 @@
  * - Daemonic (X): +X toughness bonus against damage, except force weapons, psychic powers, holy
  *   (Sanctified) attacks and attacks by other daemonic creatures.
  * - Fear (X): when the creature is in a started combat, players get a chat card with a Willpower test
- *   at the table 4-5 penalty.
+ *   at the table 4-5 penalty. A character whose Insanity bonus is at least twice the rating is immune
+ *   (core p. 353); a Daemonic or Warp-unstable source marks the test for Warp Shock.
  */
 
 const RATED = {
@@ -127,7 +128,8 @@ async function announceFear(combat) {
         const modifier = FEAR_MODIFIER[Math.min(rating, 4)] ?? -30;
         const content = await foundry.applications.handlebars.renderTemplate("systems/dark-heresy/template/chat/fear.hbs",
             { name: c.token?.name ?? c.actor.name, rating, modifier, modifierText: modifier >= 0 ? `+${modifier}` : `${modifier}` });
-        await ChatMessage.create({ content, flags: { "dark-heresy.fear": { rating, modifier, name: c.token?.name ?? c.actor.name } } });
+        await ChatMessage.create({ content, flags: { "dark-heresy.fear": { rating, modifier, name: c.token?.name ?? c.actor.name,
+            warp: isWarpEntity(c.actor) } } });
     }
     if (fresh.length) await combat.setFlag("dark-heresy", "fearAnnounced", [...announced, ...fresh]);
 }
@@ -148,11 +150,42 @@ export function onFearClick(event, prepareCommonRoll, DarkHeresyUtil) {
         ui.notifications.warn(game.i18n.localize("NOTIFICATION.MACRO_ACTOR_NOT_FOUND"));
         return;
     }
+    // Insanity bonus (core p. 353): twice the Fear rating or more and the source no longer frightens
+    const bonus = fearInsanityBonus(actor);
+    if (bonus >= 2 * fear.rating) {
+        ChatMessage.create({ speaker: ChatMessage.getSpeaker({ actor }),
+            content: `<div class="dark-heresy chat roll"><div class="background border"><p>${foundry.utils.escapeHTML(
+                game.i18n.format("FEAR.IMMUNE", { name: actor.name, source: fear.name, rating: fear.rating, bonus }))}</p></div></div>` });
+        return;
+    }
     const rollData = DarkHeresyUtil.createFearTestRolldata(actor);
     rollData.target.modifier = fear.modifier;
     rollData.name = game.i18n.format("FEAR.TEST_NAME", { name: fear.name, rating: fear.rating });
-    rollData.fear = { rating: fear.rating, combat: true }; // fear cards are posted only in a started combat
+    // fear cards are posted only in a started combat; warp: Warp Shock corruption (p. 353)
+    rollData.fear = { rating: fear.rating, combat: true, warp: Boolean(fear.warp) };
     prepareCommonRoll(rollData);
+}
+
+/**
+ * Insanity bonus against Fear (core p. 353): tens of Insanity points; the Exorcised background counts it
+ * 2 higher (Enemies Beyond p. 30, «Затронутый Демоном»).
+ * @param {Actor} actor
+ * @returns {number}
+ */
+export function fearInsanityBonus(actor) {
+    const bonus = Math.floor((Number(actor.system?.insanity) || 0) / 10);
+    const exorcised = /вычищенн|exorcised/i.test(actor.system?.bio?.background ?? "");
+    return bonus + (exorcised ? 2 : 0);
+}
+
+/**
+ * Is the actor an entity of the Warp (Daemonic or Warp Instability trait)?
+ * @param {Actor} actor
+ * @returns {boolean}
+ */
+export function isWarpEntity(actor) {
+    return traitRating(actor, "daemonic") > 0
+        || Boolean(actor?.items?.some(i => i.type === "trait" && /варп-?\s*нестабильн|warp\s+instability/i.test(i.name)));
 }
 
 /** Register fear announcements; call during init. */

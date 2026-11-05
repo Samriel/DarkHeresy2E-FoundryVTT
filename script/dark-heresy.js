@@ -42,6 +42,8 @@ import { registerPinning } from "./common/pinning.js";
 import { registerMedicae, firstAid } from "./common/medicae.js";
 import { registerRequisition, registerRequisitionSocket, requisition, subtletyPanel, subtletyTest } from "./common/requisition.js";
 import { registerCorruption } from "./common/corruption.js";
+import { registerFateApi, registerFateSocket } from "./common/fate.js";
+import { registerMindApi, registerMindSocket } from "./common/mind.js";
 import DhMacroUtil from "./common/macro.js";
 import Dh from "./common/config.js";
 
@@ -87,6 +89,8 @@ Hooks.once("init", function() {
     registerOps();
     registerConditions({ prepareCommonRoll,
         createCharacteristicRollData: (actor, key) => DarkHeresyUtil.createCharacteristicRollData(actor, key) });
+    registerFateApi();
+    registerMindApi();
     game.macro = DhMacroUtil;
     const sheets = foundry.applications.apps.DocumentSheetConfig;
     sheets.unregisterSheet(Actor, "core", foundry.appv1.sheets.ActorSheet);
@@ -144,6 +148,8 @@ Hooks.once("ready", function() {
     registerTablesSocket();
     registerRequisitionSocket();
     registerPsychic();
+    registerFateSocket();
+    registerMindSocket();
     CONFIG.ChatMessage.documentClass.prototype.getRollData = function() {
         return this.getFlag("dark-heresy", "rollData");
     };

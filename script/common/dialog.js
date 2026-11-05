@@ -4,6 +4,7 @@ import { weaponReady } from "./weapons.js";
 import { SUPPRESSION, canSuppress, applyPinnedPenalty } from "./pinning.js";
 import { applyOwnConditions, rollActor } from "./conditions.js";
 import { psychicDialogInfo } from "./psychic.js";
+import { offerFateBonus, applyFateBonus } from "./fate.js";
 
 /**
  * Show a generic roll dialog.
@@ -12,6 +13,7 @@ import { psychicDialogInfo } from "./psychic.js";
 export async function prepareCommonRoll(rollData) {
     // Prone, pinned, guarded action… of the roller himself (re-rolls keep the modifier already applied)
     if (rollData.target && !rollData.flags?.isReRoll) rollData.autoNotes = applyOwnConditions(rollData, rollActor(rollData));
+    offerFateBonus(rollData);
     const html = await foundry.applications.handlebars.renderTemplate("systems/dark-heresy/template/dialog/common-roll.hbs", rollData);
     let dialog = new Dialog({
         title: game.i18n.localize(rollData.name),
@@ -35,6 +37,7 @@ export async function prepareCommonRoll(rollData) {
                     rollData.target.modifier = parseInt(html.find("#modifier")[0].value, 10);
                     rollData.flags.isDamageRoll = false;
                     rollData.flags.isCombatRoll = false;
+                    await applyFateBonus(rollData, html);
                     await commonRoll(rollData);
                 }
             },
@@ -92,6 +95,7 @@ export async function prepareCombatRoll(rollData, actorRef) {
         if (rollData.weapon.isRange && !(rollData.attackType?.name in attackTypes)) {
             rollData.attackType = { ...rollData.attackType, name: Object.keys(attackTypes).find(key => key !== "none") };
         }
+        offerFateBonus(rollData);
         const html = await foundry.applications.handlebars.renderTemplate("systems/dark-heresy/template/dialog/combat-roll.hbs",
             { ...rollData, attackTypesRanged: attackTypes });
         let dialog = new Dialog({
@@ -148,6 +152,7 @@ export async function prepareCombatRoll(rollData, actorRef) {
                             rollData.attackType.name = "standard";
                         }
 
+                        await applyFateBonus(rollData, html);
                         await combatRoll(rollData);
                     }
                 },
@@ -186,6 +191,7 @@ export async function preparePsychicPowerRoll(rollData) {
     // Sustained powers, opposed test, range and distance to a single target (psychic.js)
     const info = psychicDialogInfo(rollData);
     rollData.autoNotes = info.notes;
+    offerFateBonus(rollData);
     const html = await foundry.applications.handlebars.renderTemplate("systems/dark-heresy/template/dialog/psychic-power-roll.hbs", rollData);
     let dialog = new Dialog({
         title: rollData.name,
@@ -217,6 +223,7 @@ export async function preparePsychicPowerRoll(rollData) {
                         rollData.psy.targets = [...game.user.targets].filter(t => t.actor).map(t => ({
                             tokenId: t.id, sceneId: t.scene?.id ?? canvas.scene?.id, name: t.name }));
                     }
+                    await applyFateBonus(rollData, html);
                     await combatRoll(rollData);
                 }
             },

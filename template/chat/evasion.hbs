@@ -11,7 +11,7 @@
         {{/if}}
         <p><strong>{{localize "CHAT.TEST_MODIFIER"}}:</strong> {{modifier}}</p>
         {{#if flags.isSuccess}}
-            <p><strong>{{localize "CHAT.DOS"}}:</strong> {{dos}}</p>
+            <p><strong>{{localize "CHAT.DOS"}}:</strong> {{dos}}{{#if fateDegrees}} ({{localize "FATE_POINTS.DEGREES_INCLUDED" degrees=fateDegrees}}){{/if}}</p>
         {{else}}
             <p><strong>{{localize "CHAT.DOF"}}:</strong> {{dof}}</p>
         {{/if}}

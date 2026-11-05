@@ -685,6 +685,29 @@ function _appendTearing(formula) {
 }
 
 /**
+ * Add degrees of success to a successful test already in chat (Fate, core p. 357) and render the card again.
+ * Attack rolls recompute their number of hits, evasions the hits they cancel.
+ * @param {object} rollData the roll data from the chat message
+ * @param {number} [degrees=1]
+ * @returns {Promise<string>} the new card content
+ */
+export async function addDegreesOfSuccess(rollData, degrees = 1) {
+    rollData.dos = (Number(rollData.dos) || 0) + degrees;
+    rollData.fateDegrees = (Number(rollData.fateDegrees) || 0) + degrees;
+    if (rollData.flags.isEvasion) {
+        rollData.numberOfHits = _computeNumberOfHits(rollData.attackDos, rollData.dos, rollData.attackType,
+            rollData.shotsFired, rollData.weapon.traits);
+        return foundry.applications.handlebars.renderTemplate("systems/dark-heresy/template/chat/evasion.hbs", rollData);
+    }
+    if (rollData.flags.isAttack && rollData.attackType?.hitMargin) {
+        rollData.attackDos = rollData.dos;
+        rollData.numberOfHits = _computeNumberOfHits(rollData.attackDos, 0, rollData.attackType,
+            rollData.shotsFired, rollData.weapon.traits);
+    }
+    return foundry.applications.handlebars.renderTemplate("systems/dark-heresy/template/chat/roll.hbs", rollData);
+}
+
+/**
  * Post a roll to chat.
  * @param {object} rollData
  */

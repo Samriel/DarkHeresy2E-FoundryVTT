@@ -1,6 +1,8 @@
 import { prepareCommonRoll, prepareCombatRoll, preparePsychicPowerRoll } from "../../common/dialog.js";
 import DarkHeresyUtil from "../../common/util.js";
 import { setSustained } from "../../common/psychic.js";
+import { fateDialog } from "../../common/fate.js";
+import { rollMindTable, chooseDisorder, suppressDisorder } from "../../common/mind.js";
 
 export class DarkHeresySheet extends foundry.appv1.sheets.ActorSheet {
     activateListeners(html) {
@@ -18,6 +20,24 @@ export class DarkHeresySheet extends foundry.appv1.sheets.ActorSheet {
         html.find(".roll-psychic-power").click(async ev => await this._prepareRollPsychicPower(ev));
         html.find(".psy-sustain-toggle").click(async ev => await this._onSustainToggle(ev));
         html.find(".condition-toggle").click(this._onConditionToggle.bind(this));
+        // Fate (core p. 357), malignancy and mutation tables, mental disorders (p. 350–356)
+        html.find(".dh-fate-menu").click(ev => {
+            ev.preventDefault();
+            fateDialog(this.actor);
+        });
+        html.find(".mind-roll-table").click(ev => {
+            ev.preventDefault();
+            rollMindTable(this.actor, ev.currentTarget.dataset.kind);
+        });
+        html.find(".mind-choose-disorder").click(ev => {
+            ev.preventDefault();
+            chooseDisorder(this.actor);
+        });
+        html.find(".mind-suppress").click(ev => {
+            ev.preventDefault();
+            const item = this.actor.items.get($(ev.currentTarget).parents(".item").data("itemId"));
+            if (item) suppressDisorder(this.actor, item, prepareCommonRoll, DarkHeresyUtil);
+        });
     }
 
     /** @override */

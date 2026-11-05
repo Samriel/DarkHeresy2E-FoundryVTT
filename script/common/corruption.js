@@ -8,13 +8,15 @@
  * - Corruption: one Malignancy test (Willpower, table 8-14 modifier) per 10 points gained; one
  *   mutation test of two characteristics of the player's choice per 30 points gained (not the same
  *   characteristic twice); 100+ removes the character from play.
- * The card has buttons for the tests; failures are resolved on the tables by the GM.
+ * The card has buttons for the tests and for choosing the disorder; a failed test card offers the roll on
+ * table 8-13, 8-15 or 8-16 and the result card adds it to the sheet (mind.js).
  */
 
 import DarkHeresyUtil from "./util.js";
 import { prepareCommonRoll } from "./dialog.js";
+import { chooseDisorder } from "./mind.js";
 
-const DISORDERS = [[40, "MIND.DISORDER_MINOR"], [60, "MIND.DISORDER_SEVERE"], [80, "MIND.DISORDER_ACUTE"]];
+const DISORDERS = [[40, "MIND.DISORDER_MINOR", "minor"], [60, "MIND.DISORDER_SEVERE", "severe"], [80, "MIND.DISORDER_ACUTE", "acute"]];
 
 const signed = n => (n > 0 ? `+${n}` : `${n}`);
 
@@ -47,8 +49,11 @@ export function mindReminders(before, after) {
         lines.push(game.i18n.format("MIND.TRAUMA_LINE", { before: ins0, after: ins1, count: trauma, modifier }));
         tests.push({ key: "trauma", label: game.i18n.format("MIND.TRAUMA_ROLL", { modifier }) });
     }
-    for (const [at, key] of DISORDERS) {
-        if (ins0 < at && ins1 >= at) lines.push(game.i18n.format("MIND.DISORDER_LINE", { points: at, disorder: game.i18n.localize(key) }));
+    for (const [at, key, severity] of DISORDERS) {
+        if (!(ins0 < at && ins1 >= at)) continue;
+        const disorder = game.i18n.localize(key);
+        lines.push(game.i18n.format("MIND.DISORDER_LINE", { points: at, disorder }));
+        tests.push({ key: "disorder", severity, label: game.i18n.format("MIND.DISORDER_BUTTON", { disorder }) });
     }
     if (ins0 < 100 && ins1 >= 100) lines.push(game.i18n.localize("MIND.INSANITY_LOST"));
 
@@ -88,7 +93,7 @@ async function onUpdate(actor, changes, options, userId) {
 }
 
 /**
- * Reminder card buttons: Trauma, Malignancy or mutation test of the card's character.
+ * Reminder card buttons: Trauma, Malignancy or mutation test of the card's character, or the disorder choice.
  * @param {Event} event
  */
 export function onMindTestClick(event) {
@@ -105,11 +110,8 @@ export function onMindTestClick(event) {
     switch (event.currentTarget.dataset.test) {
         case "trauma": rollData = DarkHeresyUtil.createTraumaTestRolldata(actor); break;
         case "malignancy": rollData = DarkHeresyUtil.createMalignancyTestRolldata(actor); break;
-        case "mutation":
-            rollData = DarkHeresyUtil.createCharacteristicRollData(actor, "toughness");
-            rollData.characteristics = DarkHeresyUtil.getCharacteristicOptions(actor, actor.characteristics.toughness.short);
-            rollData.name = "CORRUPTION.MUTATION";
-            break;
+        case "mutation": rollData = DarkHeresyUtil.createMutationTestRolldata(actor); break;
+        case "disorder": return chooseDisorder(actor, { severity: event.currentTarget.dataset.severity });
         default: return;
     }
     prepareCommonRoll(rollData);

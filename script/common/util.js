@@ -158,8 +158,23 @@ export default class DarkHeresyUtil {
             name: "CORRUPTION.MALIGNANCY",
             target: {
                 modifier: this.getMalignancyModifier(actor.corruption)
-            }
+            },
+            flags: { mindTest: "malignancy" } // a failure rolls table 8-15 (mind.js)
         });
+    }
+
+    /**
+     * Mutation test (core p. 354): a characteristic of the player's choice, failure rolls table 8-16.
+     * @param {Actor} actor
+     * @param {string} [characteristicName="toughness"] preselected characteristic
+     * @returns {object}
+     */
+    static createMutationTestRolldata(actor, characteristicName = "toughness") {
+        const rollData = this.createCharacteristicRollData(actor, characteristicName);
+        rollData.characteristics = this.getCharacteristicOptions(actor, actor.characteristics[characteristicName].short);
+        rollData.name = "CORRUPTION.MUTATION";
+        rollData.flags.mindTest = "mutation";
+        return rollData;
     }
 
     static createTraumaTestRolldata(actor) {
@@ -168,7 +183,8 @@ export default class DarkHeresyUtil {
             name: "TRAUMA.HEADER",
             target: {
                 modifier: this.getTraumaModifier(actor.insanity)
-            }
+            },
+            flags: { mindTest: "trauma" } // a failure rolls table 8-13 (mind.js)
         });
     }
 

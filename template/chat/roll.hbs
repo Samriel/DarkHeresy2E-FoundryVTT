@@ -60,8 +60,11 @@
             {{/if}}
         {{/if}}
 
+        {{#if fateBonus}}
+            <p><em>{{#if (eq fateBonus "applied")}}{{localize "FATE_POINTS.BONUS_APPLIED"}}{{else}}{{localize "FATE_POINTS.BONUS_WASTED"}}{{/if}}</em></p>
+        {{/if}}
         {{#if flags.isSuccess}}
-            <p><strong>{{localize "CHAT.DOS"}}:</strong> {{dos}}</p>
+            <p><strong>{{localize "CHAT.DOS"}}:</strong> {{dos}}{{#if fateDegrees}} ({{localize "FATE_POINTS.DEGREES_INCLUDED" degrees=fateDegrees}}){{/if}}</p>
             {{#if numberOfHits}}
             <p><strong>{{localize "CHAT.NUMBER_OF_HIT"}}:</strong> {{numberOfHits}}</p>
             {{/if}}
@@ -117,6 +120,13 @@
             <div class="wrapper flex-column">
                 <button class="invoke-pinning dh-tall">{{localize "PINNING.ROLL"}}</button>
             </div>
+        {{/if}}
+        {{#if flags.mindTest}}
+            {{#unless flags.isSuccess}}
+                <div class="wrapper flex-column">
+                    <button type="button" class="roll-mind-table">{{localize (concat "MIND.ROLL_" flags.mindTest)}}</button>
+                </div>
+            {{/unless}}
         {{/if}}
         {{#if flags.isAttack}}
             {{#if flags.isSuccess}}

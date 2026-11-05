@@ -17,4 +17,11 @@
         {{/each}}
     </div>
     {{/if}}
+    {{#if (and actorUuid result.burn)}}
+    <div class="dh-table-conditions">
+        <button type="button" class="dh-burn-fate" data-uuid="{{actorUuid}}" data-reason="{{localize "TABLES.TABLE"}} {{result.number}}: {{result.label}}">
+            <i class="fas fa-fire"></i> {{localize "FATE_POINTS.BURN_TO_SURVIVE"}}
+        </button>
+    </div>
+    {{/if}}
 </div>

@@ -12,6 +12,12 @@
         {{#each autoNotes}}
             <div class="wrapper" style="flex-basis: 100%"><em>{{this}}</em></div>
         {{/each}}
+        {{#if fateAvailable}}
+        <div class="wrapper dh-fate-bonus">
+            <label for="fateBonus">{{localize "FATE_POINTS.BONUS_LABEL"}}</label>
+            <input id="fateBonus" type="checkbox" />
+        </div>
+        {{/if}}
         <div class="separator"></div>
         <div class="wrapper">
             <label>{{localize "DIALOG.PSY_RATING"}}</label>

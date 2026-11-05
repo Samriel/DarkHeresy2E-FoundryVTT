@@ -11,6 +11,9 @@
         {{/if}}
         {{#if insanity}}
         <p><strong>{{localize "TABLES.INSANITY"}}:</strong> +{{insanity.points}}{{#if insanity.applied}} ({{localize "TABLES.INSANITY_TOTAL"}} {{insanity.total}}){{else}} — {{localize "TABLES.INSANITY_NOT_APPLIED"}}{{/if}}</p>
+        {{#if insanity.warpShock}}
+        <p><strong>{{localize "TABLES.WARP_SHOCK"}}:</strong> +{{insanity.warpShock.points}}{{#if insanity.warpShock.applied}} ({{localize "TABLES.INSANITY_TOTAL"}} {{insanity.warpShock.total}}){{else}} — {{localize "TABLES.INSANITY_NOT_APPLIED"}}{{/if}}</p>
+        {{/if}}
         {{#if insanity.trauma}}<p><strong style="color: var(--color-failure)">{{localize "TABLES.TRAUMA_TEST"}}</strong></p>{{/if}}
         {{/if}}
     </div>
