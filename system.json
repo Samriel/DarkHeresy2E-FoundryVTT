@@ -2,7 +2,7 @@
   "id": "dark-heresy",
   "title": "Dark Heresy 2E",
   "description": "Unofficial Foundry VTT System for Dark Heresy 2nd Edition.",
-  "version": "4.4.0.1",
+  "version": "4.5.0.0",
   "minimumCoreVersion" : 13,
   "compatibility" : {
     "minimum" : 13,
@@ -67,9 +67,9 @@
   "gridUnits": "m",
   "primaryTokenAttribute": null,
   "secondaryTokenAttribute": null,
-  "url": "https://github.com/Vendare/DarkHeresy2E-FoundryVTT",
+  "url": "https://github.com/Samriel/DarkHeresy2E-FoundryVTT",
   "socket": true,
-  "manifest": "https://github.com/Vendare/DarkHeresy2E-FoundryVTT/releases/download/4.4.0.1/system.json",
-  "download": "https://github.com/Vendare/DarkHeresy2E-FoundryVTT/releases/download/4.4.0.1/dark-heresy.zip",
+  "manifest": "https://github.com/Samriel/DarkHeresy2E-FoundryVTT/releases/latest/download/system.json",
+  "download": "https://github.com/Samriel/DarkHeresy2E-FoundryVTT/releases/latest/download/dark-heresy.zip",
   "license": "LICENSE.txt"
 }
