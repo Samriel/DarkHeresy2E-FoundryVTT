@@ -10,9 +10,9 @@
                 <label>{{localize "DIALOG.MODIFIER"}}</label>
                 <input id="modifier" type="text" value="{{target.modifier}}" />
             </div>
-            {{#if sizeNote}}
-                <div class="wrapper" style="flex-basis: 100%"><em>{{sizeNote}}</em></div>
-            {{/if}}
+            {{#each autoNotes}}
+                <div class="wrapper" style="flex-basis: 100%"><em>{{this}}</em></div>
+            {{/each}}
             <div class="wrapper">
                 <label>{{localize "DIALOG.AIM"}}</label>
                 <select id="aim">
