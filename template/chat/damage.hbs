@@ -13,6 +13,9 @@
 	        <p><strong>{{localize "CHAT.RIGHTEOUS_FURY"}}:</strong> <span class="damage-righteous-fury">{{damage.righteousFury}}</span></p>
 	        {{/if}}
 	    {{/each}}
+	    {{#if weapon.special}}
+	    <p><strong>{{localize "CHAT.QUALITIES"}}:</strong> {{dhQualities weapon.special}}</p>
+	    {{/if}}
 	    <div class="wrapper flex-column">
 	        <button class="apply-damage-targets">{{localize "CHAT.APPLY_DAMAGE_TARGETS"}}</button>
 	    </div>

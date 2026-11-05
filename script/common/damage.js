@@ -7,6 +7,9 @@
  * the attack, and the same roll at or under the overload chance overloads the field.
  */
 
+import { applyAttackQualities } from "./qualities.js";
+import { traitRating } from "./traits.js";
+
 const SOCKET = "system.dark-heresy";
 
 const DAMAGE_LETTER = { energy: "E", impact: "I", rending: "R", explosive: "X" };
@@ -23,7 +26,7 @@ function damagePayload(message) {
     const rollData = message.getRollData();
     if (!rollData?.flags?.isDamageRoll || !rollData.damages?.length) return null;
     const type = DAMAGE_LETTER[rollData.weapon?.damageType] ?? "I";
-    return {
+    const payload = {
         messageId: message.id,
         source: rollData.itemName ?? rollData.name ?? "",
         special: rollData.weapon?.special ?? "",
@@ -37,6 +40,9 @@ function damagePayload(message) {
             righteousFury: Number(d.righteousFury) || 0
         }))
     };
+    applyAttackQualities(rollData, payload.damages, game.actors.get(rollData.ownerId) ?? null,
+        actor => traitRating(actor, "daemonic"));
+    return payload;
 }
 
 /**

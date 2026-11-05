@@ -1,4 +1,5 @@
 import { traitRating, traitArmour, unnaturalRatings, daemonicApplies } from "./traits.js";
+import { qualityValue } from "./qualities.js";
 
 export class DarkHeresyActor extends Actor {
 
@@ -406,7 +407,22 @@ export class DarkHeresyActor extends Actor {
      * @returns {Promise<Actor>}             A Promise which resolves once the damage has been applied
      */
     async applyDamage(damages, attack) {
-        const daemonic = daemonicApplies(attack) ? traitRating(this, "daemonic") : 0;
+        const special = attack?.special ?? "";
+        let daemonic = daemonicApplies(attack) ? traitRating(this, "daemonic") : 0;
+        let toughnessBonus = this.system.characteristics.toughness.bonus;
+        // Felling (X): unnatural toughness counts X less for this damage
+        const felling = Number(qualityValue(special, "felling")) || 0;
+        if (felling) {
+            const unnatural = Math.max(Number(this.system.characteristics.toughness.unnatural) || 0,
+                unnaturalRatings(this).toughness || 0);
+            toughnessBonus -= Math.min(felling, unnatural);
+        }
+        // Daemonbane against a Daemonic target: damage is not reduced by toughness bonus
+        if (qualityValue(special, "daemonbane") && traitRating(this, "daemonic") > 0) {
+            toughnessBonus = 0;
+            daemonic = 0;
+        }
+        const graviton = Boolean(qualityValue(special, "graviton"));
         let wounds = this.wounds.value;
         let criticalWounds = this.wounds.critical;
         const damageTaken = [];
@@ -416,10 +432,10 @@ export class DarkHeresyActor extends Actor {
         for (const damage of damages) {
             // Get the armour for the location and minus penetration, no negatives
             let armour = Math.max(this._getArmour(damage.location) - Number(damage.penetration), 0);
+            // Graviton: extra damage equal to the armour points at the location
+            const amount = Number(damage.amount) + (graviton ? this._getArmour(damage.location) : 0);
             // Reduce damage by toughness bonus
-            const damageMinusToughness = Math.max(
-                Number(damage.amount) - this.system.characteristics.toughness.bonus - daemonic, 0
-            );
+            const damageMinusToughness = Math.max(amount - toughnessBonus - daemonic, 0);
 
             // Calculate wounds to add, reducing damage by armour after pen
             let woundsToAdd = Math.max(damageMinusToughness - armour, 0);
@@ -466,7 +482,7 @@ export class DarkHeresyActor extends Actor {
             isBar: true
         }, updates);
 
-        await this._showCritMessage(damageTaken, this.name, wounds, criticalWounds);
+        await this._showCritMessage(damageTaken, this.name, wounds, criticalWounds, special);
         return allowed !== false ? this.update(updates) : this;
     }
 
@@ -528,13 +544,14 @@ export class DarkHeresyActor extends Actor {
      * @param {number} totalWounds
      * @param {number} totalCritWounds
      */
-    async _showCritMessage(rolls, target, totalWounds, totalCritWounds) {
+    async _showCritMessage(rolls, target, totalWounds, totalCritWounds, special = "") {
         if (rolls.length === 0) return;
         const html = await renderTemplate("systems/dark-heresy/template/chat/critical.hbs", {
             rolls,
             target,
             totalWounds,
-            totalCritWounds
+            totalCritWounds,
+            special
         });
         ChatMessage.create({ content: html, flags: {"dark-heresy.rolls": rolls, "dark-heresy.totalCritWounds": totalCritWounds} });
     }

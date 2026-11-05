@@ -20,3 +20,19 @@
 
   &.readonly .dh-pip { cursor: default; }
 }
+
+// Weapon quality tooltips (script/common/qualities.js)
+.dh-quality {
+  text-decoration: underline dotted;
+  cursor: help;
+}
+.dh-quality-tooltip {
+  max-width: 420px;
+  text-align: left;
+  p { margin: 0.3em 0; }
+}
+.dark-heresy .stat.dh-qualities {
+  flex: 1 1 100%;
+  font-size: 0.9em;
+  justify-content: flex-start;
+}

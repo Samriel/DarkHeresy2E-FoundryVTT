@@ -9,5 +9,8 @@
         </ul>
         <br>
         <div>Current <b>Wounds: </b>{{totalWounds}}. <b>Critical Damage: </b>{{totalCritWounds}}</div>
+        {{#if (dhReminders special)}}
+        <p><strong>{{localize "CHAT.QUALITY_REMINDERS"}}:</strong> {{dhReminders special}}</p>
+        {{/if}}
     </div>
 </div>

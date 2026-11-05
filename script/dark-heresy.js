@@ -29,6 +29,7 @@ import { registerDamageSocket } from "./common/damage.js";
 import { registerMovement } from "./common/movement.js";
 import { registerActions } from "./common/actions.js";
 import { registerTraits } from "./common/traits.js";
+import { registerQualities } from "./common/qualities.js";
 import DhMacroUtil from "./common/macro.js";
 import Dh from "./common/config.js";
 
@@ -58,6 +59,7 @@ Hooks.once("init", function() {
             combatRoll
         }
     };
+    registerQualities();
     game.macro = DhMacroUtil;
     Actors.unregisterSheet("core", ActorSheet);
     Actors.registerSheet("dark-heresy", AcolyteSheet, { types: ["acolyte"], makeDefault: true });
