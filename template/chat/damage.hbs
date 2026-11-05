@@ -13,6 +13,9 @@
 	        <p><strong>{{localize "CHAT.RIGHTEOUS_FURY"}}:</strong> <span class="damage-righteous-fury">{{damage.righteousFury}}</span></p>
 	        {{/if}}
 	    {{/each}}
+	    <div class="wrapper flex-column">
+	        <button class="apply-damage-targets">{{localize "CHAT.APPLY_DAMAGE_TARGETS"}}</button>
+	    </div>
 	    <div class="dice-rolls" style="display:none">
 	        <h1>{{localize "CHAT.ROLL_TITLE"}}</h1>
 		    {{#each damages as |damage|}}

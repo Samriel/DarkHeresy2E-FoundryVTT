@@ -1,6 +1,7 @@
 import { commonRoll, combatRoll, damageRoll } from "./roll.js";
 import { prepareCommonRoll } from "./dialog.js";
 import DarkHeresyUtil from "./util.js";
+import { onApplyToTargetsClick, applyToActors } from "./damage.js";
 
 
 /**
@@ -11,6 +12,7 @@ export function chatListeners(html) {
     if (!(html instanceof HTMLElement)) return;
     html.querySelectorAll(".invoke-test")?.forEach(button => button.addEventListener("click", event => onTestClick(event)));
     html.querySelectorAll(".invoke-damage")?.forEach(button => button.addEventListener("click", event => onDamageClick(event)));
+    html.querySelectorAll(".apply-damage-targets")?.forEach(button => button.addEventListener("click", event => onApplyToTargetsClick(event)));
     html.querySelectorAll(".reload-Weapon")?.forEach(button => button.addEventListener("click", event => onReloadClick(event)));
     html.querySelectorAll(".dark-heresy.chat.roll>.background.border")?.forEach(button => button.addEventListener("dblclick", event => onChatRollClick(event)));
 }
@@ -36,7 +38,7 @@ export const addChatMessageContextOptions = function(html, options) {
             name: game.i18n.localize("CHAT.CONTEXT.APPLY_DAMAGE"),
             icon: '<i class="fas fa-user-minus"></i>',
             condition: canApply,
-            callback: li => applyChatCardDamage(li)
+            callback: li => applyToActors(game.messages.get(li.dataset.messageId), canvas.tokens.controlled)
         }
     );
 
@@ -62,41 +64,6 @@ export const addChatMessageContextOptions = function(html, options) {
     );
     return options;
 };
-
-/**
- * Apply rolled dice damage to the token or tokens which are currently controlled.
- * This allows for damage to be scaled by a multiplier to account for healing, critical hits, or resistance
- *
- * @param {HTMLElement} roll    The chat entry which contains the roll data
- * @param {number} multiplier   A damage multiplier to apply to the rolled damage.
- * @returns {Promise}
- */
-function applyChatCardDamage(roll, multiplier) {
-    // Get the damage data, get them as arrays in case of multiple hits
-    const amount = roll.querySelectorAll(".damage-total");
-    const location = roll.querySelectorAll(".damage-location");
-    const penetration = roll.querySelectorAll(".damage-penetration");
-    const type = roll.querySelectorAll(".damage-type");
-    const righteousFury = roll.querySelectorAll(".damage-righteous-fury");
-
-    // Put the data from different hits together
-    const damages = [];
-    for (let i = 0; i < amount.length; i++) {
-        damages.push({
-            amount: $(amount[i]).text(),
-            location: $(location[i]).data("location"),
-            penetration: $(penetration[i]).text(),
-            type: $(type[i]).text(),
-            righteousFury: $(righteousFury[i]).text()
-        });
-    }
-
-    // Apply to any selected actors
-    return Promise.all(canvas.tokens.controlled.map(t => {
-        const a = t.actor;
-        return a.applyDamage(damages);
-    }));
-}
 
 /**
  * Rerolls the Test using the same Data as the initial Roll while reducing an actors fate

@@ -1,0 +1,15 @@
+<div class="dark-heresy chat roll">
+    <div class="background border">
+        <h1>{{localize "FORCE_FIELD.HEADER"}}: {{field}}</h1>
+        <h3>{{target}}{{#if source}} — {{source}}{{/if}}</h3>
+        <p><strong>{{localize "FORCE_FIELD.ROLL"}}:</strong> {{result}} / {{rating}}</p>
+        {{#if blocked}}
+            <h3 style="color: var(--color-success)">{{localize "FORCE_FIELD.BLOCKED"}}</h3>
+        {{else}}
+            <h3 style="color: var(--color-failure)">{{localize "FORCE_FIELD.NOT_BLOCKED"}}</h3>
+        {{/if}}
+        {{#if overloaded}}
+            <p><strong style="color: var(--color-failure)">{{localize "FORCE_FIELD.OVERLOADED_MESSAGE"}}</strong> ({{result}} ≤ {{overload}})</p>
+        {{/if}}
+    </div>
+</div>

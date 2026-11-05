@@ -25,6 +25,7 @@ import { migrateWorld } from "./common/migration.js";
 import { prepareCommonRoll, prepareCombatRoll, preparePsychicPowerRoll } from "./common/dialog.js";
 import { commonRoll, combatRoll } from "./common/roll.js";
 import { chatListeners } from "./common/chat.js";
+import { registerDamageSocket } from "./common/damage.js";
 import DhMacroUtil from "./common/macro.js";
 import Dh from "./common/config.js";
 
@@ -109,6 +110,7 @@ Hooks.once("init", function() {
 
 Hooks.once("ready", function() {
     migrateWorld();
+    registerDamageSocket();
     CONFIG.ChatMessage.documentClass.prototype.getRollData = function() {
         return this.getFlag("dark-heresy", "rollData");
     };

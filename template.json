@@ -1259,6 +1259,8 @@
                 "equipment"
             ],
             "protectionRating": 0,
+      "active": false,
+      "overloaded": false,
             "overloadChance": 0
         },
         "gear": {
