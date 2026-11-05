@@ -83,7 +83,7 @@ async function onUpdate(actor, changes, options, userId) {
     if (!lines.length) return;
     const token = actor.token ?? null;
     const link = { actorId: actor.id, sceneId: token?.parent?.id ?? null, tokenId: token?.id ?? null };
-    const content = await renderTemplate("systems/dark-heresy/template/chat/mind.hbs", { name: actor.name, lines, tests });
+    const content = await foundry.applications.handlebars.renderTemplate("systems/dark-heresy/template/chat/mind.hbs", { name: actor.name, lines, tests });
     await ChatMessage.create({ content, speaker: ChatMessage.getSpeaker({ actor }), flags: { "dark-heresy": { mind: link } } });
 }
 
