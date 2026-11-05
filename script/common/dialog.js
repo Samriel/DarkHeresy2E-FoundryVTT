@@ -74,9 +74,18 @@ export async function prepareCombatRoll(rollData, actorRef) {
         // Range band, size, shooting into melee and prone target of the single targeted token
         rollData.autoNotes = [...pinnedNotes, ...applySituationalModifiers(rollData, attacker)];
         const situational = { modifier: rollData.target.modifier, range: rollData.rangeMod };
-        // Suppressing fire only with a weapon that fires the matching burst
-        const attackTypes = Object.fromEntries(Object.entries(game.darkHeresy.config.attackTypeRanged)
-            .filter(([key]) => !SUPPRESSION[key] || canSuppress(rollData, key)));
+        // Only the attack types the weapon's rate of fire allows (S/B/F); suppressing fire likewise
+        // roll data carries only burst/full; the single-shot rate is on the weapon item
+        const rof = attacker?.items.get(rollData.itemId)?.system?.rateOfFire ?? rollData.weapon.rateOfFire ?? {};
+        const needs = { standard: "single", called_shot: "single", semi_auto: "burst", full_auto: "full" };
+        let attackTypes = Object.fromEntries(Object.entries(game.darkHeresy.config.attackTypeRanged)
+            .filter(([key]) => (SUPPRESSION[key] ? canSuppress(rollData, key)
+                : !needs[key] || Number(rof[needs[key]]) > 0)));
+        // A weapon without any rate of fire keeps the full list rather than an empty one
+        if (!Object.keys(attackTypes).some(key => key !== "none")) attackTypes = game.darkHeresy.config.attackTypeRanged;
+        if (rollData.weapon.isRange && !(rollData.attackType?.name in attackTypes)) {
+            rollData.attackType = { ...rollData.attackType, name: Object.keys(attackTypes).find(key => key !== "none") };
+        }
         const html = await foundry.applications.handlebars.renderTemplate("systems/dark-heresy/template/dialog/combat-roll.hbs",
             { ...rollData, attackTypesRanged: attackTypes });
         let dialog = new Dialog({
