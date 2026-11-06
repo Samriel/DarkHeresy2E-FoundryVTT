@@ -6,7 +6,8 @@
  * script/common/talents/*.js and registered with registerTalents:
  *
  *   { id, match: /^(?:ненависть|hatred)\b/i,
- *     test(ctx), against(ctx), evasion(ctx), after(ctx), reroll(ctx), damage(ctx), defence(ctx) }
+ *     test(ctx), against(ctx), evasion(ctx), after(ctx), reroll(ctx), action(ctx), damage(ctx), defence(ctx),
+ *     initiative(ctx) }
  *
  * - test(ctx) → effect(s): before a test or an attack of the actor. Evaluated when the roll dialog is
  *   confirmed (the attack type, range and evasion chosen there count) and previewed in the dialog.
@@ -17,16 +18,22 @@
  *   toggle, checked, fate, input: {min, max, value} with resolve(n) → effect, key (several per talent) }.
  *   toggle: true is an activated talent: a checkbox in the roll dialog, unticked unless checked; fate: 1
  *   spends a Fate point when ticked (an Unlucky waste cancels it); fate: "hit" spends it only when the
- *   attack's damage is rolled, and the effect's saved damage applies only if the point was spent.
+ *   attack's damage is rolled, and the effect's saved damage applies only if the point was spent;
+ *   limit ("round"…, as for re-rolls) hides the checkbox once used.
  * - after(ctx) → text: after the d100; changes rollData (dos, dof, flags.isSuccess) itself.
  * - reroll(ctx) → { text, modifier, limit: "round" | "combat" | "day" | "session" }: after a failed test,
  *   a re-roll button on the card (not on a re-roll). damageReroll(ctx) → same, on the damage card.
+ * - action(ctx) → { text, data, fate, limit, ownerUuid } | [...]: after the d100, a button on the card; a click
+ *   by the owner (the talent's actor unless ownerUuid) spends Fate / a use and calls
+ *   def.onAction({actor, owner, action, message, rollData}) → text for a chat line (or nothing). Other cards
+ *   offer buttons the same way with talentActions(actor, step, ctx) (phenomena step: tables.js, ctx {power, perils}).
  * - damage(ctx) → { text, damage, penetration, proven, rfFace, rerollBelow, firstHit: {damage,
  *   penetration, trueDamage}, crit: n, cover: n, apply(rollData) }: the damage roll of an attack. Effects
  *   saved from the test step (rollData.talentDamage) apply here too. trueDamage ignores armour and
  *   toughness; cover: extra points the attack wears off the target's cover (cover.js).
  * - defence(ctx) → { text, armour: n | {"ARMOUR.BODY": n…}, critReduce }: damage taken by the actor
  *   (DarkHeresyActor#applyDamage); armour counts only where worn armour covers the location.
+ * - initiative(ctx) → { formula, text }: the actor's initiative roll (ctx: actor, talent, bonus).
  * - init(): called once when the definition is registered (hooks of the talent).
  *
  * ctx: { actor, talent: {def, item, name, spec, rank}, rollData, kind (conditions.rollKind), skill,
@@ -36,7 +43,7 @@
  * rollData.damageTalents (damage card), the notes of the damage report (defence).
  */
 import { rollKind, rollActor, recordOfActor } from "./conditions.js";
-import { spendFate } from "./fate.js";
+import { spendFate, updateMessage } from "./fate.js";
 
 const defs = [];
 const grantSources = [];
@@ -52,7 +59,7 @@ export function registerTalents(list) {
 
 /**
  * Register a source of talents an actor has without the item (states, auras):
- * fn(actor) → [{id, name, spec}].
+ * fn(actor) → [{id, name, spec, ...}]; the whole grant is kept as talent.grant.
  * @param {Function} fn
  */
 export function registerTalentGrants(fn) {
@@ -79,14 +86,14 @@ export function actorTalents(actor) {
     for (const item of actor?.items ?? []) {
         if (item.type !== "talent") continue;
         const name = item.name.trim();
-        const def = defs.find(d => d.match.test(name));
-        if (def) add(def, item, name);
+        // A talent may have several definitions (different groups of effects)
+        for (const def of defs.filter(d => d.match.test(name))) add(def, item, name);
     }
     for (const source of grantSources) {
         for (const grant of asList(source(actor))) {
             const def = defs.find(d => d.id === grant.id);
             if (def && !out.some(t => t.def === def && t.spec.toLowerCase() === (grant.spec ?? "").toLowerCase())) {
-                out.push({ def, item: null, name: grant.name, spec: grant.spec ?? "", rank: 1 });
+                out.push({ def, item: null, name: grant.name, spec: grant.spec ?? "", rank: 1, grant });
             }
         }
     }
@@ -201,7 +208,8 @@ function effectName(effect) {
  * @returns {{passive: object[], toggles: object[]}|null}
  */
 export function talentDialogData(rollData, checked) {
-    const effects = testEffects(rollData);
+    const actor = rollActor(rollData);
+    const effects = testEffects(rollData).filter(e => !(e.toggle && e.limit && usedUp(actor, toggleKey(e), e.limit)));
     if (!effects.length) return null;
     const passive = effects.filter(e => !e.toggle).map(e => ({ name: effectName(e), text: e.text }));
     const toggles = effects.filter(e => e.toggle).map(e => ({ key: e.key, name: effectName(e), text: e.text,
@@ -250,6 +258,9 @@ async function applyEffect(rollData, effect) {
     (rollData.talents ??= []).push({ name: effectName(effect), text: effect.text });
 }
 
+/** Use-limit key of an activated talent. */
+const toggleKey = effect => `${effect.talent.def.id}${effect.talent.spec ? `-${effect.talent.spec.slugify?.() ?? effect.talent.spec}` : ""}-test`;
+
 /**
  * Roll dialog callback (after the dialog's values are read into rollData): apply the talents that act by
  * themselves and the ticked ones; spend Fate for ticked talents that cost it.
@@ -265,9 +276,11 @@ export async function applyTalents(rollData, html) {
     delete rollData.talentForce;
     // An evasion keeps the attack's saved damage effects for the hits left after it
     if (!rollData.flags?.isEvasion) delete rollData.talentDamage;
+    const actor = rollActor(rollData);
     for (let effect of testEffects(rollData)) {
         if (effect.toggle) {
             if (!ticked.has(effect.key)) continue;
+            if (effect.limit && usedUp(actor, toggleKey(effect), effect.limit)) continue;
             if (effect.input && effect.resolve) {
                 const n = Math.clamp(parseInt(ticked.get(effect.key)?.value, 10) || 0, effect.input.min ?? 0, effect.input.max ?? 99);
                 if (!n) continue;
@@ -276,9 +289,10 @@ export async function applyTalents(rollData, html) {
             // Paid when the damage is rolled (payTalentFate)
             if (effect.fate === "hit") effect = { ...effect, damage: { ...effect.damage, fate: true } };
             else if (effect.fate) {
-                const spent = await spendFate(rollActor(rollData), "talent", { detail: effect.talent.name });
+                const spent = await spendFate(actor, "talent", { detail: effect.talent.name });
                 if (!spent?.effective) continue;
             }
+            if (effect.limit) await markUsed(actor, toggleKey(effect), effect.limit);
         }
         await applyEffect(rollData, effect);
     }
@@ -320,17 +334,24 @@ export function afterRollTalents(rollData) {
         const text = talent.def.after?.({ ...ctx, talent });
         if (text) (rollData.talents ??= []).push({ name: talent.name, text });
     }
+    // Card buttons, once the degrees are final
+    const actions = talentActions(actor, "action", ctx);
+    if (actions.length) rollData.talentActions = actions;
+    else delete rollData.talentActions;
 }
 
 /**
  * Stamp of a use limit: a use is spent while the stamp stays the same.
  * @param {string} limit
+ * @param {Actor} [actor] round and combat: the started combat the actor fights in, else the viewed one
  * @returns {string|null}
  */
-function limitStamp(limit) {
+function limitStamp(limit, actor) {
+    const combat = game.combats?.find(c => c.started && c.combatants.some(cb => cb.actor === actor))
+        ?? (game.combat?.started ? game.combat : null);
     switch (limit) {
-        case "round": return game.combat?.started ? `${game.combat.id}:${game.combat.round}` : null;
-        case "combat": return game.combat?.started ? game.combat.id : null;
+        case "round": return combat ? `${combat.id}:${combat.round}` : null;
+        case "combat": return combat?.id ?? null;
         case "day": return String(Math.floor((game.time?.worldTime ?? 0) / 86400));
         case "session": return new Date().toDateString();
         default: return null;
@@ -338,13 +359,13 @@ function limitStamp(limit) {
 }
 
 function usedUp(actor, key, limit) {
-    const stamp = limitStamp(limit);
-    return Boolean(stamp) && actor.getFlag("dark-heresy", "talentUses")?.[key] === stamp;
+    const stamp = limitStamp(limit, actor);
+    return Boolean(stamp) && actor?.getFlag("dark-heresy", "talentUses")?.[key] === stamp;
 }
 
 async function markUsed(actor, key, limit) {
-    const stamp = limitStamp(limit);
-    if (stamp && actor.isOwner) await actor.update({ [`flags.dark-heresy.talentUses.${key}`]: stamp });
+    const stamp = limitStamp(limit, actor);
+    if (stamp && actor?.isOwner) await actor.update({ [`flags.dark-heresy.talentUses.${key}`]: stamp });
 }
 
 /**
@@ -417,6 +438,121 @@ export async function onTalentRerollClick(event, rolls) {
         return rolls.combatRoll(rollData);
     }
     return rolls.commonRoll(rollData);
+}
+
+/* -------------------------------------------- */
+/*  Card buttons                                */
+/* -------------------------------------------- */
+
+/**
+ * Buttons of an actor's talents for a card: the action step on roll cards, other steps on other cards.
+ * @param {Actor} actor
+ * @param {string} step definition method: "action", "phenomena"…
+ * @param {object} ctx context passed to the step (talent is added)
+ * @returns {object[]} [{key, id, spec, name, text, fate, limit, ownerUuid, actorUuid, data}]
+ */
+export function talentActions(actor, step, ctx = {}) {
+    const out = [];
+    for (const talent of actorTalents(actor)) {
+        asList(talent.def[step]?.({ ...ctx, actor, talent })).forEach((a, i) => {
+            const key = `${talent.def.id}${talent.spec ? `-${talent.spec.slugify?.() ?? talent.spec}` : ""}`;
+            if (usedUp(actor, key, a.limit)) return;
+            out.push({ key: `${key}:${step}:${a.key ?? i}`, useKey: key, id: talent.def.id, spec: talent.spec,
+                name: talent.name, text: a.text ?? "", fate: a.fate ? 1 : 0, limit: a.limit ?? null,
+                actorUuid: actor.uuid, ownerUuid: a.ownerUuid ?? actor.uuid, data: a.data ?? {} });
+        });
+    }
+    return out;
+}
+
+/**
+ * Wire the talent buttons of a rendered card; used ones are disabled.
+ * @param {HTMLElement} html
+ */
+export function talentActionListeners(html) {
+    const message = game.messages.get(html.dataset?.messageId);
+    const used = message?.getFlag("dark-heresy", "talentActionsUsed") ?? [];
+    html.querySelectorAll(".dh-talent-action").forEach(button => {
+        if (used.includes(button.dataset.key)) button.disabled = true;
+        button.addEventListener("click", onTalentActionClick);
+    });
+}
+
+/**
+ * Chat button: a talent's action (spends Fate or a use, then the definition's onAction).
+ * @param {Event} event
+ */
+async function onTalentActionClick(event) {
+    event.preventDefault();
+    const button = event.currentTarget;
+    const message = game.messages.get(button.closest(".message")?.dataset.messageId);
+    const rollData = message?.getFlag("dark-heresy", "rollData");
+    const actions = rollData?.talentActions ?? message?.getFlag("dark-heresy", "talentActions") ?? [];
+    const action = actions.find(a => a.key === button.dataset.key);
+    const def = action && defs.find(d => d.id === action.id);
+    if (!def?.onAction || (message.getFlag("dark-heresy", "talentActionsUsed") ?? []).includes(action.key)) return;
+    const owner = fromUuidSync(action.ownerUuid);
+    const actor = fromUuidSync(action.actorUuid);
+    if (!owner?.isOwner) {
+        ui.notifications.warn(game.i18n.format("TALENTS.NOT_OWNER", { name: owner?.name ?? "" }));
+        return;
+    }
+    if (usedUp(actor, action.useKey, action.limit)) {
+        ui.notifications.warn(game.i18n.format("TALENTS.USED", { name: action.name }));
+        return;
+    }
+    button.disabled = true;
+    if (action.fate) {
+        const spent = await spendFate(actor, "talent", { detail: action.name });
+        if (!spent) button.disabled = false;
+        if (!spent?.effective) return;
+    }
+    await markUsed(actor, action.useKey, action.limit);
+    await updateMessage(message, { "flags.dark-heresy.talentActionsUsed":
+        [...(message.getFlag("dark-heresy", "talentActionsUsed") ?? []), action.key] });
+    const text = await def.onAction({ actor, owner, action, message, rollData: foundry.utils.deepClone(rollData ?? null) });
+    if (text) {
+        await ChatMessage.create({ speaker: ChatMessage.getSpeaker({ actor }),
+            content: `<div class="dark-heresy chat roll"><div class="background border"><p><strong>${
+                foundry.utils.escapeHTML(action.name)}:</strong> ${foundry.utils.escapeHTML(text)}</p></div></div>` });
+    }
+}
+
+/* -------------------------------------------- */
+/*  Initiative                                  */
+/* -------------------------------------------- */
+
+/**
+ * Initiative formula of an actor's talents (initiative step), or null.
+ * @param {Actor} actor
+ * @returns {{formula: string, name: string, text: string}|null}
+ */
+export function talentInitiative(actor) {
+    const ctx = { actor, bonus: key => Number(actor?.characteristics?.[key]?.bonus) || 0 };
+    for (const talent of actorTalents(actor)) {
+        const effect = talent.def.initiative?.({ ...ctx, talent });
+        if (effect?.formula) return { ...effect, name: talent.name };
+    }
+    return null;
+}
+
+/** Initiative rolls by talents and their line on the initiative card; call during init. */
+export function registerTalentHooks() {
+    const Base = CONFIG.Combatant.documentClass;
+    CONFIG.Combatant.documentClass = class extends Base {
+        /** @override */
+        _getInitiativeFormula() {
+            return talentInitiative(this.actor)?.formula ?? super._getInitiativeFormula();
+        }
+    };
+    Hooks.on("preCreateChatMessage", (message, data) => {
+        if (!message.getFlag("core", "initiativeRoll")) return;
+        const actor = ChatMessage.getSpeakerActor(message.speaker);
+        const talent = talentInitiative(actor);
+        if (!talent) return;
+        const line = `${game.i18n.localize("TALENTS.CHAT")}: ${talent.name} (${talent.text})`;
+        message.updateSource({ flavor: [message.flavor, line].filter(Boolean).join("<br>") });
+    });
 }
 
 /* -------------------------------------------- */

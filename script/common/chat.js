@@ -13,7 +13,7 @@ import { confirmEvasion } from "./conditions.js";
 import { psychicChatListeners } from "./psychic.js";
 import { spendFate, fateAddDegree, canSpendOn, onBurnFateClick, rollActor } from "./fate.js";
 import { onMindTableClick, onMindAddClick } from "./mind.js";
-import { onTalentRerollClick } from "./talents.js";
+import { onTalentRerollClick, talentActionListeners, hasTalent } from "./talents.js";
 
 
 /**
@@ -53,6 +53,7 @@ export function chatListeners(html) {
     });
     html.querySelectorAll(".dh-talent-reroll")?.forEach(button => button.addEventListener("click",
         event => onTalentRerollClick(event, { commonRoll, combatRoll, damageRoll })));
+    talentActionListeners(html);
     html.querySelectorAll(".reload-Weapon")?.forEach(button => button.addEventListener("click", event => onReloadClick(event)));
     html.querySelectorAll(".dark-heresy.chat.roll>.background.border")?.forEach(button => button.addEventListener("dblclick", event => onChatRollClick(event)));
 }
@@ -178,6 +179,10 @@ async function onTestClick(ev) {
         selected: "dodge"
     };
     rollData.evasions = evasions;
+    // Deny the Witch: a Willpower evasion only against psychic powers and with the talent (core p. 162)
+    const options = { ...game.darkHeresy.config.evasions };
+    if (!(rollData.powerUuid && hasTalent(actor, "denyTheWitch"))) delete options.deny;
+    rollData.evasionOptions = options;
     rollData.target.modifier = 0;
     rollData.flags.isEvasion = true;
     rollData.flags.isAttack = false;

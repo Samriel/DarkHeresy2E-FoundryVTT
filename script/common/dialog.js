@@ -242,7 +242,7 @@ export async function preparePsychicPowerRoll(rollData) {
                     rollData.target.base = parseInt(html.find("#target")[0]?.value, 10);
                     rollData.target.modifier = parseInt(html.find("#modifier")[0]?.value, 10);
                     rollData.psy.value = parseInt(html.find("#psy")[0].value, 10);
-                    rollData.psy.warpConduit = html.find("#warpConduit")[0].checked;
+                    rollData.psy.warpConduit = false; // Warp Conduit is a talent (talents/tests.js)
                     rollData.weapon.damageFormula = html.find("#damageFormula")[0].value;
                     rollData.weapon.damageType = html.find("#damageType")[0].value;
                     rollData.weapon.damageBonus = parseInt(html.find("#damageBonus")[0].value, 10);

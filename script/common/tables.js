@@ -25,6 +25,7 @@
  */
 
 import { canBurnFate } from "./fate.js";
+import { talentActions } from "./talents.js";
 
 const SOCKET = "system.dark-heresy";
 
@@ -175,6 +176,8 @@ export function phenomenaModifier(psy, actor) {
     const sustained = Number(actor?.system?.psy?.sustained) || 0;
     if (sustained > 1) parts.push({ label: "TABLES.MOD_SUSTAINED", value: 10 * (sustained - 1) });
     if (psy.warpConduit) parts.push({ label: "TABLES.MOD_WARP_CONDUIT", value: 30 });
+    // Talents of the focus test (Tainted Psyker…): {label, value} set by talents/tests.js
+    for (const p of psy.talentPhenomena ?? []) parts.push({ ...p });
     for (const p of parts) p.label = game.i18n.localize(p.label);
     return { total: parts.reduce((s, p) => s + p.value, 0), parts };
 }
@@ -196,9 +199,10 @@ function favouredByWarp(actor) {
  * @param {number} options.perilsModifier perils modifier
  * @param {string} options.psykerClass bound, unbound or daemonic
  * @param {object[]} [options.parts] modifier breakdown for the card
+ * @param {string} [options.powerUuid] the power that caused it (talents that cancel phenomena of a discipline)
  * @returns {Promise<ChatMessage>}
  */
-export async function rollPhenomena(actor, { modifier = 0, perilsModifier = 0, psykerClass = "bound", parts = [] } = {}) {
+export async function rollPhenomena(actor, { modifier = 0, perilsModifier = 0, psykerClass = "bound", parts = [], powerUuid = null } = {}) {
     const rolls = [];
     const roll = await new Roll(`1d100 + ${Number(modifier) || 0}`).evaluate();
     rolls.push(roll);
@@ -218,7 +222,11 @@ export async function rollPhenomena(actor, { modifier = 0, perilsModifier = 0, p
         perils.roll = perilsRoll.total;
         perils.modifier = Number(perilsModifier) || 0;
     }
+    // Talents that cancel the result (Warp Lock…): buttons on the card (talents.js)
+    const actions = actor ? talentActions(actor, "phenomena", { power: powerUuid ? fromUuidSync(powerUuid) : null,
+        perils: Boolean(perils) }) : [];
     const content = await foundry.applications.handlebars.renderTemplate("systems/dark-heresy/template/chat/phenomena.hbs", {
+        actions,
         name: actor?.name ?? "",
         actorUuid: actor?.uuid ?? "",
         roll: roll.total,
@@ -233,7 +241,7 @@ export async function rollPhenomena(actor, { modifier = 0, perilsModifier = 0, p
         content,
         rolls,
         speaker: ChatMessage.getSpeaker({ actor }),
-        flags: { "dark-heresy.phenomena": { roll: roll.total, perils: perils?.roll ?? null } }
+        flags: { "dark-heresy.phenomena": { roll: roll.total, perils: perils?.roll ?? null }, "dark-heresy.talentActions": actions }
     });
 }
 
@@ -267,7 +275,7 @@ export async function onPhenomenaClick(event) {
         rejectClose: false
     });
     if (!result) return;
-    await rollPhenomena(actor, { ...result, psykerClass: rollData.psy.class, parts: computed.parts });
+    await rollPhenomena(actor, { ...result, psykerClass: rollData.psy.class, parts: computed.parts, powerUuid: rollData.powerUuid });
     if (message.isOwner) await message.setFlag("dark-heresy", "phenomenaRolled", true);
 }
 

@@ -125,7 +125,8 @@ export async function rollFirstAid(healer, token) {
     rollData.target.modifier = firstAidModifier(patient);
     rollData.name = game.i18n.format("MEDICAE.FIRST_AID_NAME", { name: token.name });
     rollData.firstAid = { sceneId: token.document.parent?.id ?? null, tokenId: token.id, actorId: patient.id,
-        intelligenceBonus: Number(healer.system.characteristics.intelligence.bonus) || 0, healer: healer.name };
+        intelligenceBonus: Number(healer.system.characteristics.intelligence.bonus) || 0, healer: healer.name,
+        state: woundState(patient), penalty: rollData.target.modifier }; // state and penalty: Master Chirurgeon
     prepareCommonRoll(rollData);
 }
 

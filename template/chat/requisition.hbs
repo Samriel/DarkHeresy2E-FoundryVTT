@@ -16,6 +16,7 @@
         {{#unless automatic}}
             <p><strong>{{localize "CHAT.TEST_MODIFIER"}}:</strong> {{modifier}}</p>
         {{/unless}}
+        {{> "systems/dark-heresy/template/chat/talents.hbs" list=talents}}
         {{#if success}}
             <p><strong>{{localize "CHAT.DOS"}}:</strong> {{dos}}</p>
         {{else}}
