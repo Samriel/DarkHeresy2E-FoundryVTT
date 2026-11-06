@@ -30,7 +30,7 @@
                 <div class="wrapper">
                     <label>{{localize "DIALOG.ATTACK_TYPE"}}</label>
                     <select id="attackType">
-                        {{selectOptions (config "attackTypeMelee") selected=attackType.name localize=true}}
+                        {{selectOptions attackTypesMelee selected=attackType.name localize=true}}
                     </select>
                 </div>
             {{/if}}

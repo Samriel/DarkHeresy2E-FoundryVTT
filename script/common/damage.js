@@ -33,13 +33,15 @@ function damagePayload(message) {
         source: rollData.itemName ?? rollData.name ?? "",
         special: rollData.weapon?.special ?? "",
         attack: { psychic: Boolean(rollData.psy?.display), special: rollData.weapon?.special ?? "",
-            attackerId: rollData.ownerId ?? null, talentCrit: rollData.talentCrit ?? null },
+            attackerId: rollData.ownerId ?? null, talentCrit: rollData.talentCrit ?? null,
+            talentCover: rollData.talentCover ?? null },
         damages: rollData.damages.map(d => ({
             amount: Number(d.total) || 0,
             location: d.location,
             penetration: Number(d.penetration) || 0,
             type,
-            righteousFury: Number(d.righteousFury) || 0
+            righteousFury: Number(d.righteousFury) || 0,
+            trueDamage: Number(d.trueDamage) || 0
         }))
     };
     applyAttackQualities(rollData, payload.damages, game.actors.get(rollData.ownerId) ?? null,

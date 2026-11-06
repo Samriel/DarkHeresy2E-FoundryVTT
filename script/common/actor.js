@@ -422,6 +422,7 @@ export class DarkHeresyActor extends Actor {
      * @param {number} damages.penetration  Amount of penetration from the attack
      * @param {string} damages.type         Type of damage
      * @param {number} damages.righteousFury Amount rolled on the righteous fury die, defaults to 0
+     * @param {number} [damages.trueDamage] Damage that ignores armour and toughness bonus (talents)
      * @returns {Promise<Actor>}             A Promise which resolves once the damage has been applied
      */
     async applyDamage(damages, attack) {
@@ -470,7 +471,7 @@ export class DarkHeresyActor extends Actor {
             const damageMinusToughness = Math.max(amount - toughnessBonus - daemonic, 0);
 
             // Calculate wounds to add, reducing damage by armour after pen
-            let woundsToAdd = Math.max(damageMinusToughness - armour, 0);
+            let woundsToAdd = Math.max(damageMinusToughness - armour, 0) + (Number(damage.trueDamage) || 0);
 
             // If no wounds inflicted and righteous fury was rolled, attack causes one wound
             if (damage.righteousFury && woundsToAdd === 0) {
@@ -521,7 +522,13 @@ export class DarkHeresyActor extends Actor {
         }, updates);
 
         await this._showCritMessage(damageTaken, this.name, wounds, criticalWounds, special, talents.notes);
-        if (coverHits) await wearCover(this, coverWorn, coverHits);
+        // The attacker's talents wear the cover further (Nowhere to Hide)
+        const coverNotes = [];
+        if (coverWorn && talents.cover) {
+            coverWorn += talents.cover.bonus;
+            coverNotes.push({ name: talents.cover.name, text: `+${talents.cover.bonus}` });
+        }
+        if (coverHits) await wearCover(this, coverWorn, coverHits, coverNotes);
         return allowed !== false ? this.update(updates) : this;
     }
 

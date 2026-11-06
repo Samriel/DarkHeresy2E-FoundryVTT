@@ -4,7 +4,7 @@ import { checkWeaponJam, setSprayJam } from "./weapons.js";
 import { phenomenaModifier, fearConsequences } from "./tables.js";
 import { SUPPRESSION, SUPPRESSION_MODIFIER, suppressionArea, resolveSuppression, labelSuppressionDamages } from "./pinning.js";
 import { psychicBlast, resolveOpposed } from "./psychic.js";
-import { afterRollTalents, offerTalentRerolls, damageTalents } from "./talents.js";
+import { afterRollTalents, offerTalentRerolls, damageTalents, payTalentFate } from "./talents.js";
 
 /**
  * Roll a generic roll, and post the result to chat.
@@ -218,6 +218,7 @@ async function _rollDamage(rollData) {
     let formula = "0";
     rollData.damages = [];
     // Talents of the attacker: extra damage and penetration, Proven, Vengeful, re-rolled low dice (talents.js)
+    await payTalentFate(rollData);
     const talents = damageTalents(rollData);
     const traits = { ...rollData.weapon.traits };
     if (talents.proven > (Number(traits.proven) || 0)) traits.proven = talents.proven;
@@ -261,9 +262,13 @@ async function _rollDamage(rollData) {
         firstHit.total += talents.firstHit.damage;
         firstHit.penetration += talents.firstHit.penetration;
     }
-    // Critical damage bonus of the attacker's talents, applied by the target (actor.js)
+    // Damage ignoring armour and toughness (Instrument of His Will), applied by the target (actor.js)
+    if (talents.firstHit.trueDamage) firstHit.trueDamage = talents.firstHit.trueDamage;
+    // Critical damage and cover wear bonuses of the attacker's talents, applied by the target (actor.js)
     if (talents.crit) rollData.talentCrit = { bonus: talents.crit, name: talents.critName };
     else delete rollData.talentCrit;
+    if (talents.cover) rollData.talentCover = { bonus: talents.cover, name: talents.coverName };
+    else delete rollData.talentCover;
     // Called shot: the hit goes to the chosen location (core p. 269)
     const firstLocation = (rollData.attackType?.name === "called_shot" && rollData.calledShot)
         ? rollData.calledShot : _getLocation(rollData.attackResult);

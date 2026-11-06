@@ -11,10 +11,13 @@
  * - Suppressing fire (pinning.js): a 30° or 45° cone drawn by the same coneArea.
  * Area regions are removed when the damage from the card is applied, at the next turn change, or
  * when the same user makes the next area attack.
+ * Talents: Grenadier (Enemies Without p. 75) shortens the scatter by half the Ballistic Skill bonus (rounded up);
+ * Divine Protection (Enemies Within p. 65) leaves the attacker's allies out of his Spray.
  */
 
 import { isTrained } from "./weapons.js";
-import { confirmEvasion } from "./conditions.js";
+import { confirmEvasion, rollActor } from "./conditions.js";
+import { findTalent, signed } from "./talents.js";
 
 const SOCKET = "system.dark-heresy";
 
@@ -93,7 +96,16 @@ export async function blastArea(rollData, radius, { self = false } = {}) {
     let scatter = null;
     if (!rollData.flags.isSuccess) {
         const dir = (await new Roll("1d10").evaluate()).total;
-        const dist = (await new Roll("1d5").evaluate()).total;
+        let dist = (await new Roll("1d5").evaluate()).total;
+        // Grenadier: − half the Ballistic Skill bonus (rounded up) metres
+        const actor = rollActor(rollData);
+        const grenadier = findTalent(actor, "grenadier");
+        const less = grenadier ? Math.ceil((Number(actor.characteristics?.ballisticSkill?.bonus) || 0) / 2) : 0;
+        if (less) {
+            const text = game.i18n.format("TALENTS.EFFECT.SCATTER", { value: signed(-less), rolled: dist });
+            dist = Math.max(0, dist - less);
+            (rollData.talents ??= []).push({ name: grenadier.name, text });
+        }
         const from = attackerToken(rollData)?.center;
         const base = from ? Math.atan2(center.y - from.y, center.x - from.x) : -Math.PI / 2;
         const angle = base + SCATTER_ANGLE[dir] * Math.PI / 180;
@@ -115,9 +127,10 @@ export async function blastArea(rollData, radius, { self = false } = {}) {
  * @param {number} options.length cone length in metres
  * @param {string} options.label region name
  * @param {string} [options.pickHint] notification shown when the user has to click the direction
+ * @param {boolean} [options.spareAllies] leave out the tokens of the attacker's disposition
  * @returns {Promise<object|null>} {regionId, tokenIds}
  */
-export async function coneArea(rollData, { angle, length, label, pickHint }) {
+export async function coneArea(rollData, { angle, length, label, pickHint, spareAllies = false }) {
     if (!canvas.ready) return null;
     const origin = attackerToken(rollData)?.center ?? await pickPoint(game.i18n.localize("AREA.PICK_ORIGIN"));
     if (!origin) return null;
@@ -135,6 +148,7 @@ export async function coneArea(rollData, { angle, length, label, pickHint }) {
     const self = attackerToken(rollData);
     const regionId = await createArea({ type: "polygon", points }, t => {
         if (t === self) return false;
+        if (spareAllies && self && t.document.disposition === self.document.disposition) return false;
         const dx = t.center.x - origin.x, dy = t.center.y - origin.y;
         const d = Math.hypot(dx, dy);
         if (d > pixels + t.w / 2) return false;
@@ -152,7 +166,8 @@ export async function coneArea(rollData, { angle, length, label, pickHint }) {
  */
 export async function sprayArea(rollData) {
     const area = await coneArea(rollData, { angle: 30, length: Number(rollData.weapon.range) || 0,
-        label: `${rollData.itemName ?? rollData.name}: ${game.i18n.localize("AREA.SPRAY")}` });
+        label: `${rollData.itemName ?? rollData.name}: ${game.i18n.localize("AREA.SPRAY")}`,
+        spareAllies: Boolean(findTalent(rollActor(rollData), "divineProtection")) });
     return area ? { regionId: area.regionId } : null;
 }
 
