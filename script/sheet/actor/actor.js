@@ -4,6 +4,7 @@ import { setSustained } from "../../common/psychic.js";
 import { fateDialog } from "../../common/fate.js";
 import { rollMindTable, chooseDisorder, suppressDisorder } from "../../common/mind.js";
 import { combatActionMenu } from "../../common/combat-actions.js";
+import { talentMenu, hasTalentActions } from "../../common/talent-states.js";
 
 export class DarkHeresySheet extends foundry.appv1.sheets.ActorSheet {
     activateListeners(html) {
@@ -85,7 +86,14 @@ export class DarkHeresySheet extends foundry.appv1.sheets.ActorSheet {
                     class: "combat-action",
                     icon: "fa-solid fa-person-running",
                     onclick: async () => await combatActionMenu(this.actor)
-                }
+                },
+                // Activated talents and talent states (talent-states.js)
+                ...(hasTalentActions(this.actor) ? [{
+                    label: game.i18n.localize("TALENTS.STATE.MENU"),
+                    class: "talent-menu",
+                    icon: "fa-solid fa-star",
+                    onclick: async () => await talentMenu(this.actor)
+                }] : [])
             ].concat(buttons);
         }
         return buttons;

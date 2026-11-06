@@ -13,6 +13,8 @@
  * - {type: "damage", uuid, damages, attack} — Actor#applyDamage.
  * - {type: "spend", speaker: {token, actor}, halves} — half actions of the current combatant.
  * - {type: "record", speaker: {token, actor}, changes} — merge into the combatant's action record.
+ * - {type: "effect", uuid, key, data?, active = true} — replace the actor's effect marked with the flag
+ *   «dark-heresy.key» by a new one from ActiveEffect data, or remove it (talent states).
  */
 import { combatantFor, updateRecord, spendHalves } from "./actions.js";
 
@@ -87,6 +89,16 @@ const OPS = {
     async record({ speaker, changes }) {
         const combatant = combatantFor(speaker ?? {});
         if (combatant && changes) await updateRecord(combatant, changes);
+    },
+
+    async effect({ uuid, key, data, active = true }) {
+        const actor = await actorFrom(uuid);
+        if (!actor || !key) return;
+        const old = actor.effects.filter(e => e.getFlag("dark-heresy", "key") === key).map(e => e.id);
+        if (old.length) await actor.deleteEmbeddedDocuments("ActiveEffect", old);
+        if (active && data) {
+            await actor.createEmbeddedDocuments("ActiveEffect", [foundry.utils.mergeObject(data, { "flags.dark-heresy.key": key })]);
+        }
     }
 };
 

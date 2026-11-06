@@ -20,6 +20,8 @@
  * - Psychic blast (p. 244): every target within the radius of a point in range is hit; the radius comes
  *   from the power's Blast (X) quality with X evaluated with the psy rating («Взрыв (ПР)», «Blast (2xPR)»).
  *   The area is placed like a blast weapon (area.js), centred on the psyker for powers with range «Self».
+ * - Psy rating sources (registerPsyRatingSource): talents around the psyker (Warp Disruption…) lower the
+ *   rating the focus dialog starts from and its maximum, or note that powers are forbidden (Frenzy).
  */
 
 import { blastArea } from "./area.js";
@@ -27,6 +29,17 @@ import { tokenDistance } from "./situational.js";
 
 const SOCKET = "system.dark-heresy";
 const FLAG = "sustained";
+
+/** Sources that lower the psy rating of a focus power test: fn(actor) → [{reduce, note}]. */
+const ratingSources = [];
+
+/**
+ * Register a source of psy rating changes for the focus power dialog.
+ * @param {Function} fn (actor) → {reduce: number, note: string}[]
+ */
+export function registerPsyRatingSource(fn) {
+    ratingSources.push(fn);
+}
 
 const norm = s => String(s ?? "").toLowerCase().replace(/ё/g, "е").replace(/\s+/g, " ").trim();
 const stripHTML = s => String(s ?? "").replace(/<[^>]*>/g, " ");
@@ -440,7 +453,17 @@ export function psychicDialogInfo(rollData) {
         const label = game.darkHeresy.config.opposedTests?.[rollData.psy.opposed];
         notes.push(game.i18n.format("PSY.OPPOSED_NOTE", { characteristic: label ? game.i18n.localize(label) : rollData.psy.opposed }));
     }
-    const actor = game.actors.get(rollData.ownerId);
+    const actor = (rollData.actorUuid ? fromUuidSync(rollData.actorUuid) : null) ?? game.actors.get(rollData.ownerId);
+    // Talents that lower the rating (the largest reduction counts) or forbid powers (a note)
+    const changes = actor ? ratingSources.flatMap(fn => fn(actor) ?? []) : [];
+    const reduce = Math.max(0, ...changes.map(c => Number(c.reduce) || 0));
+    if (reduce) {
+        rollData.psy.rating = Math.max(0, (Number(rollData.psy.rating) || 0) - reduce);
+        rollData.psy.max = Math.max(0, (Number(rollData.psy.max) || 0) - reduce);
+        rollData.psy.value = Math.min(Number(rollData.psy.value) || 0, Math.max(1, rollData.psy.rating));
+    }
+    notes.push(...changes.map(c => c.note).filter(Boolean));
+    if (reduce && !rollData.psy.rating) notes.push(game.i18n.localize("TALENTS.STATE.NO_PSY_RATING"));
     const self = psykerToken(actor);
     const targets = [...game.user.targets];
     const target = targets.length === 1 ? targets[0] : null;

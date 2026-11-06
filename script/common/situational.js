@@ -17,19 +17,21 @@
  * - Target in Defensive Stance: −20 to melee attacks (p. 269). Grappled target: +20 to melee attacks of
  *   anyone but its grapple partner (p. 281).
  * - Darkness, fog and smoke, weather, higher ground, ganging up (pp. 283, 285): environment.js.
+ * - A target whose talent state ignores the stun (conditions.js conditionRule) does not count as stunned.
  * The parts talents may cancel are kept in rollData.situationalParts ({intoMelee, darkness, fog, weather, higher,
  * outnumber: {modifier, allies: token ids}}), the single target in rollData.targetTokenId.
  */
 import { sizeHitModifier } from "./traits.js";
 import { applyTrainingModifier } from "./weapons.js";
-import { recordOfActor, grappleOf } from "./conditions.js";
+import { recordOfActor, grappleOf, conditionRule } from "./conditions.js";
 import { environmentModifiers } from "./environment.js";
 
 // Token statuses (CONFIG.statusEffects ids)
 const HELPLESS = ["unconscious", "helpless"];
 const UNAWARE = ["surprised"];
 
-const hasStatus = (actor, ids) => ids.some(id => actor?.statuses?.has(id));
+const hasStatus = (actor, ids) => ids.some(id => actor?.statuses?.has(id)
+    && !(id === "stunned" && conditionRule(actor, "ignore:stunned")));
 
 /**
  * Is a token stunned, helpless or unaware (cancels the shooting-into-melee penalty)?

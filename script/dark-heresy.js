@@ -40,6 +40,8 @@ import { registerCover } from "./common/cover.js";
 import { registerEnvironment } from "./common/environment.js";
 import { registerTalentDefinitions } from "./common/talents/index.js";
 import { registerTalentHooks } from "./common/talents.js";
+import { registerTalentStates, talentMenu } from "./common/talent-states.js";
+import { auraGrants } from "./common/talents/states.js";
 import { replaceSymbols } from "./common/roll.js";
 import DarkHeresyUtil from "./common/util.js";
 import { registerTablesApi, registerTablesSocket } from "./common/tables.js";
@@ -82,7 +84,9 @@ Hooks.once("init", function() {
         subtletyPanel,
         subtletyTest,
         util: DarkHeresyUtil,
-        combatAction: combatActionMenu
+        combatAction: combatActionMenu,
+        talentMenu,
+        talentGrants: auraGrants
     };
     registerQualities();
     registerWeapons({ prepareCommonRoll, replaceSymbols,
@@ -102,6 +106,8 @@ Hooks.once("init", function() {
     registerEnvironment();
     registerTalentDefinitions();
     registerTalentHooks();
+    registerTalentStates({ prepareCommonRoll,
+        createCharacteristicRollData: (actor, key) => DarkHeresyUtil.createCharacteristicRollData(actor, key) });
     game.macro = DhMacroUtil;
     const sheets = foundry.applications.apps.DocumentSheetConfig;
     sheets.unregisterSheet(Actor, "core", foundry.appv1.sheets.ActorSheet);

@@ -28,10 +28,10 @@
  *   standing up removes the prone condition. Cover: take or change cover (cover.js), no cost of its own.
  * Opposed tests (p. 28): the one who passes wins; both pass — more degrees, then the higher characteristic
  * bonus, then the lower roll; both fail — nobody wins. The initiator's client rolls for both sides.
- * Effects on documents go through the active GM (ops.js).
+ * Effects on documents go through the active GM (ops.js). Activated talents have their own menu (talent-states.js).
  */
 import { postWithOps } from "./ops.js";
-import { card, ownModifiers, recordOfActor, combatantOfActor, grappleOf } from "./conditions.js";
+import { card, ownModifiers, recordOfActor, combatantOfActor, grappleOf, conditionRule } from "./conditions.js";
 import { actionsOf, spentHalves, halvesPerTurn } from "./actions.js";
 import { applySituationalModifiers } from "./situational.js";
 import { takeCover } from "./cover.js";
@@ -554,7 +554,8 @@ const COST_KEY = { 0: "COMBAT_ACTION.COST_FREE", 1: "COMBAT_ACTION.COST_HALF", 2
 export async function combatActionMenu(actor, id) {
     if (!actor?.isOwner) return ui.notifications.warn(loc("COMBAT_ACTION.NOT_OWNER"));
     if (id) return ACTIONS.find(a => a.id === id)?.run(actor);
-    const available = ACTIONS.filter(a => a.when?.(actor) ?? true);
+    // Talent states may take actions away (Frenzy: no Disengage), conditions.js conditionRule
+    const available = ACTIONS.filter(a => (a.when?.(actor) ?? true) && !conditionRule(actor, `ban:${a.id}`));
     const combatant = combatantOfActor(actor);
     const left = combatant ? halvesPerTurn(combatant) - spentHalves(actionsOf(combatant)) : null;
     const target = singleTarget();

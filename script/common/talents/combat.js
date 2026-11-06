@@ -391,12 +391,11 @@ export default [
     },
     {
         // Daemonhunter (EB p. 68): attacks against daemons are Proven (3), ticked when the target is Daemonic;
-        // re-roll a failed Awareness or Psyniscience test to detect a daemonic presence
+        // the re-roll to detect daemons is daemonhunterDetect (tests.js)
         id: "daemonhunter",
         match: /^(?:демоноборец|da?emon\s*hunter)/i,
         test: ({ rollData, targetActor }) => (rollData.flags?.isAttack
-            ? { toggle: true, checked: isDaemon(targetActor), damage: { proven: 3 }, text: t("DAEMON_PROVEN") } : null),
-        reroll: ({ skill }) => (["awareness", "psyniscience"].includes(skill) ? { text: t("DAEMON_DETECT") } : null)
+            ? { toggle: true, checked: isDaemon(targetActor), damage: { proven: 3 }, text: t("DAEMON_PROVEN") } : null)
     },
     {
         // Cleanse and Purify (EW p. 40): with a Flame weapon re-roll damage dice below the Willpower bonus
@@ -435,7 +434,7 @@ export default [
             if (!points) return null;
             const armour = armourMongerSplit(talent.item, points);
             const where = Object.entries(armour).map(([label, n]) => `${game.i18n.localize(label)} ${n}`).join(", ");
-            return { armour, text: t("ARMOUR", { value: points, where }) };
+            return { armour, text: t("ARMOUR_AT", { value: points, where }) };
         }
     },
 

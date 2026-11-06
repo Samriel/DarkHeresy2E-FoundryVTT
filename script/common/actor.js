@@ -4,6 +4,7 @@ import { criticalEffect } from "./tables.js";
 import { coverArmour, wearCover } from "./cover.js";
 import { sustainedPowers, sustainPenalty } from "./psychic.js";
 import { defenceTalents } from "./talents.js";
+import { stateStats } from "./talent-states.js";
 
 export class DarkHeresyActor extends Actor {
 
@@ -56,14 +57,17 @@ export class DarkHeresyActor extends Actor {
         let middle = Object.values(this.characteristics).length / 2;
         let i = 0;
         const traitUnnatural = unnaturalRatings(this);
+        // Talent states (talent-states.js): Frenzy changes characteristics (never below 1), some ignore fatigue
+        const states = stateStats(this);
         for (let [key, characteristic] of Object.entries(this.characteristics)) {
             // Unnatural Characteristic trait counts if it is higher than the value typed on the sheet
             const unnatural = Math.max(Number(characteristic.unnatural) || 0, traitUnnatural[key] || 0);
             characteristic.total = characteristic.base + characteristic.advance;
+            if (states.characteristics[key]) characteristic.total = Math.max(1, characteristic.total + states.characteristics[key]);
             characteristic.bonus = Math.floor(characteristic.total / 10) + unnatural;
             // Fatigued characteristic: bonus below the fatigue level counts half (core p. 287);
             // Influence is not one of the characteristics
-            characteristic.fatigued = key !== "influence" && this.fatigue.value > characteristic.bonus;
+            characteristic.fatigued = key !== "influence" && !states.ignoreFatigue && this.fatigue.value > characteristic.bonus;
             if (characteristic.fatigued) {
                 characteristic.total = Math.ceil(characteristic.total / 2);
                 characteristic.bonus = Math.floor(characteristic.total / 10) + unnatural;
@@ -469,7 +473,7 @@ export class DarkHeresyActor extends Actor {
             }
             // Get the armour for the location (and cover) and minus penetration, no negatives
             const worn = direct ? 0 : this._getArmour(damage.location);
-            const talentArmour = worn > 0 ? talents.armourAt(damage.location) : 0;
+            const talentArmour = direct ? 0 : talents.armourAt(damage.location, worn > 0);
             let armour = Math.max(worn + talentArmour + cover - Number(damage.penetration), 0);
             // Graviton: extra damage equal to the armour points at the location
             const amount = Number(damage.amount) + (graviton ? this._getArmour(damage.location) : 0);

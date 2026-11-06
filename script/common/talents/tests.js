@@ -180,7 +180,7 @@ export default [
     {
         // Strong Minded (p. 161): re-roll a failed Willpower test resisting a psychic power
         id: "strongMinded",
-        match: /^(?:непреклонный|strong[-\s]?minded)/i,
+        match: /^(?:непреклонный(?!\s+крестоносец)|strong[-\s]?minded)(?![\p{L}])/iu,
         reroll: ({ rollData }) => (rollData.opposedTo && rollData.characteristicKey === "willpower" ? { text: "" } : null)
     },
     {

@@ -18,7 +18,11 @@
  * - Guarded Action (p. 273): −10 to his WS and BS tests this turn, +10 to Evasion until his next turn.
  * - Evasion (p. 270): only outside his own turn, one reaction per round (Defensive Stance gives two, p. 269),
  *   not when stunned, grappled (p. 281), after an All Out Attack (p. 269), nor against the Standard Attack
- *   following a won Feint (p. 270). The roll is still allowed after a warning: the GM has the last word.
+ *   following a won Feint (p. 270), nor against an attack marked unavoidable (rollData.unavoidable: the name of
+ *   the talent, Killing Strike). The roll is still allowed after a warning: the GM has the last word.
+ * - Talent states may change what a condition does (registerConditionRule): «ignore:stunned» keeps the turn and
+ *   the reactions of a stunned character, «ignore:fatigue» spares him the knock-out above the threshold (death
+ *   still counts), «ban:<action id>» takes an action of the combat menu away.
  */
 import { actionsOf, combatantFor, reactionLeft } from "./actions.js";
 import { runOps, postWithOps, statusEffectOf, actorFrom } from "./ops.js";
@@ -27,6 +31,32 @@ const isActiveGM = () => game.user === game.users.activeGM;
 
 /** Additional own-condition sources (cover, environment): fn(actor, kind, rollData) → [{modifier, note}]. */
 const extraSources = [];
+
+/** Rules of talent states on conditions and actions: fn(actor, key) → name of the source or null. */
+const ruleSources = [];
+
+/**
+ * Register a source of condition rules (talent states).
+ * @param {Function} fn (actor, key) → string|null; key «ignore:<status>», «ban:<action>»
+ */
+export function registerConditionRule(fn) {
+    ruleSources.push(fn);
+}
+
+/**
+ * What makes a rule apply to the actor (the talent's name), or null.
+ * @param {Actor} actor
+ * @param {string} key «ignore:stunned», «ignore:fatigue», «ban:DISENGAGE»…
+ * @returns {string|null}
+ */
+export function conditionRule(actor, key) {
+    if (!actor) return null;
+    for (const fn of ruleSources) {
+        const source = fn(actor, key);
+        if (source) return source;
+    }
+    return null;
+}
 
 /**
  * Register another source of modifiers on the character's own tests.
@@ -169,7 +199,7 @@ export function rollActor(rollData) {
 export function evasionProblems(actor, attack) {
     const problems = [];
     if (!actor) return problems;
-    if (actor.statuses?.has("stunned")) problems.push(game.i18n.localize("EVASION.STUNNED"));
+    if (actor.statuses?.has("stunned") && !conditionRule(actor, "ignore:stunned")) problems.push(game.i18n.localize("EVASION.STUNNED"));
     if (actor.statuses?.has("grappled")) problems.push(game.i18n.localize("EVASION.GRAPPLED"));
     const combatant = combatantOfActor(actor);
     if (combatant) {
@@ -182,6 +212,7 @@ export function evasionProblems(actor, attack) {
     if (attack?.feint && (attack.feint === tokenId || attack.feint === actor.id)) {
         problems.push(game.i18n.localize("EVASION.FEINT"));
     }
+    if (attack?.unavoidable) problems.push(game.i18n.format("TALENTS.STATE.UNAVOIDABLE", { name: attack.unavoidable }));
     return problems;
 }
 
@@ -266,6 +297,14 @@ async function stunnedTurn(actor, combatant, combat) {
     const rounds = effect?.getFlag("dark-heresy", "rounds");
     const name = foundry.utils.escapeHTML(actor.name);
     const speaker = ChatMessage.getSpeaker({ actor, token: combatant.token });
+    // A talent state (Frenzy, Unkillable) ignores the stun: the turn is kept, the duration still counts down
+    const ignoredBy = conditionRule(actor, "ignore:stunned");
+    if (ignoredBy && !(rounds !== undefined && rounds <= 0)) {
+        if (rounds !== undefined) await effect.setFlag("dark-heresy", "rounds", rounds - 1);
+        await ChatMessage.create({ speaker, content: card(game.i18n.localize("CONDITION.STUNNED"),
+            `<p>${game.i18n.format("TALENTS.STATE.STUN_IGNORED", { name, talent: foundry.utils.escapeHTML(ignoredBy) })}</p>`) });
+        return;
+    }
     if (rounds !== undefined && rounds <= 0) {
         await actor.toggleStatusEffect("stunned", { active: false });
         await ChatMessage.create({ speaker, content: card(game.i18n.localize("CONDITION.STUNNED"),
@@ -347,7 +386,7 @@ async function onUpdateActor(actor, changes) {
             ${game.i18n.localize("TABLES.APPLY_CONDITION")}: ${game.i18n.localize("EFFECT.StatusDead")}</button></div>`) });
         return;
     }
-    if (actor.statuses.has("unconscious")) return;
+    if (actor.statuses.has("unconscious") || conditionRule(actor, "ignore:fatigue")) return;
     await actor.toggleStatusEffect("unconscious", { active: true });
     await ChatMessage.create({ speaker: ChatMessage.getSpeaker({ actor }), content: card(game.i18n.localize("FATIGUE"),
         `<p>${game.i18n.format("CONDITIONS.FATIGUE_UNCONSCIOUS", { name, fatigue, threshold,

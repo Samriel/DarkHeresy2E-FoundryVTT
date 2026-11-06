@@ -4,8 +4,10 @@
 import { registerTalents } from "../talents.js";
 import COMBAT from "./combat.js";
 import TESTS from "./tests.js";
+import STATES from "./states.js";
 
 /** Register all talent definitions; call during init. */
 export function registerTalentDefinitions() {
-    registerTalents([...COMBAT, ...TESTS]);
+    // States before tests: «Непреклонный Крестоносец» would otherwise match Strong Minded («непреклонный»)
+    registerTalents([...COMBAT, ...STATES, ...TESTS]);
 }
