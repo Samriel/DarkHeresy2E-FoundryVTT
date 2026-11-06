@@ -4,6 +4,7 @@ import { checkWeaponJam, setSprayJam } from "./weapons.js";
 import { phenomenaModifier, fearConsequences } from "./tables.js";
 import { SUPPRESSION, SUPPRESSION_MODIFIER, suppressionArea, resolveSuppression, labelSuppressionDamages } from "./pinning.js";
 import { psychicBlast, resolveOpposed } from "./psychic.js";
+import { afterRollTalents, offerTalentRerolls, damageTalents } from "./talents.js";
 
 /**
  * Roll a generic roll, and post the result to chat.
@@ -12,6 +13,7 @@ import { psychicBlast, resolveOpposed } from "./psychic.js";
 export async function commonRoll(rollData) {
     await _computeCommonTarget(rollData);
     await _rollTarget(rollData);
+    afterRollTalents(rollData);
     // Opposed test against a psychic power card (psychic.js)
     if (rollData.opposedTo) resolveOpposed(rollData);
     if (rollData.flags.isEvasion) {
@@ -22,6 +24,7 @@ export async function commonRoll(rollData) {
             rollData.shotsFired,
             rollData.weapon.traits);
     }
+    offerTalentRerolls(rollData);
     await _sendRollToChat(rollData);
     if (rollData.flags.isFear && !rollData.flags.isSuccess) await fearConsequences(rollData);
 }
@@ -55,6 +58,7 @@ export async function combatRoll(rollData) {
         await _computeCombatTarget(rollData);
         await _rollTarget(rollData);
         _applyHelplessTarget(rollData);
+        afterRollTalents(rollData);
         await checkWeaponJam(rollData);
         rollData.attackDos = rollData.dos;
         rollData.attackResult = rollData.result;
@@ -72,6 +76,7 @@ export async function combatRoll(rollData) {
         const blast = rollData.psy?.display ? 0 : Number(qualityValue(special, "blast")) || 0;
         if (blast && !rollData.flags.isEvasion && !rollData.weaponJam?.jammed) rollData.area = await blastArea(rollData, blast);
         if (rollData.psy?.display && !rollData.flags.isEvasion) rollData.area = await psychicBlast(rollData);
+        offerTalentRerolls(rollData);
         await _sendRollToChat(rollData);
     }
 }
@@ -95,6 +100,7 @@ function _applyHelplessTarget(rollData) {
  */
 export async function damageRoll(rollData) {
     await _rollDamage(rollData);
+    offerTalentRerolls(rollData, "damage");
     await sendDamageToChat(rollData);
 }
 
@@ -185,6 +191,9 @@ async function _rollTarget(rollData) {
     await r.evaluate();
     rollData.result = r.total;
     rollData.rollObject = r;
+    // A talent may make the die count as a set result (the d100 still shows what was rolled)
+    const force = rollData.talentForce;
+    if (Number.isFinite(force?.result)) rollData.result = force.result;
     rollData.flags.isSuccess = rollData.result <= rollData.target.final;
     if (rollData.flags.isSuccess) {
         rollData.dof = 0;
@@ -192,6 +201,12 @@ async function _rollTarget(rollData) {
     } else {
         rollData.dos = 0;
         rollData.dof = 1 + _getDegree(rollData.result, rollData.target.final);
+    }
+    // A talent may pass the test automatically with set degrees of success (Mastery)
+    if (force?.success) {
+        rollData.flags.isSuccess = true;
+        rollData.dof = 0;
+        rollData.dos = Math.max(1, Number(force.dos) || 1);
     }
     if (rollData.psy) _computePsychicPhenomena(rollData);
 }
@@ -202,6 +217,11 @@ async function _rollTarget(rollData) {
 async function _rollDamage(rollData) {
     let formula = "0";
     rollData.damages = [];
+    // Talents of the attacker: extra damage and penetration, Proven, Vengeful, re-rolled low dice (talents.js)
+    const talents = damageTalents(rollData);
+    const traits = { ...rollData.weapon.traits };
+    if (talents.proven > (Number(traits.proven) || 0)) traits.proven = talents.proven;
+    if (talents.rfFace) traits.rfFace = Math.min(Number(traits.rfFace) || 10, talents.rfFace);
     if (rollData.weapon.damageFormula) {
         formula = rollData.weapon.damageFormula;
 
@@ -209,30 +229,41 @@ async function _rollDamage(rollData) {
         if (rollData.helplessTarget && rollData.weapon.isMelee) {
             formula = formula.replace(/(\d*)d(\d+)/i, (m, n, faces) => `${(Number(n) || 1) * 2}d${faces}`);
         }
-        if (rollData.weapon.traits.tearing) {
+        if (traits.tearing) {
             formula = _appendTearing(formula);
         }
-        if (rollData.weapon.traits.proven) {
-            formula = _appendNumberedDiceModifier(formula, "min", rollData.weapon.traits.proven);
+        if (talents.rerollBelow) {
+            formula = formula.replace(/(\d*d\d+)/i, `$1r<${talents.rerollBelow}`);
         }
-        if (rollData.weapon.traits.primitive) {
-            formula = _appendNumberedDiceModifier(formula, "max", rollData.weapon.traits.primitive);
+        if (traits.proven) {
+            formula = _appendNumberedDiceModifier(formula, "min", traits.proven);
+        }
+        if (traits.primitive) {
+            formula = _appendNumberedDiceModifier(formula, "max", traits.primitive);
         }
 
-        formula = `${formula}+${rollData.weapon.damageBonus}`;
+        formula = `${formula}+${rollData.weapon.damageBonus}${talents.damage ? `+${talents.damage}` : ""}`;
         formula = _replaceSymbols(formula, rollData);
     }
 
 
-    let penetration = await _rollPenetration(rollData);
+    let penetration = await _rollPenetration(rollData) + talents.penetration;
 
     let firstHit = await _computeDamage(
         formula,
         penetration,
         rollData.attackDos,
         rollData.aim?.isAiming,
-        rollData.weapon.traits
+        traits
     );
+    // Talents that add to the first hit only (Eye of Vengeance…)
+    if (talents.firstHit.damage || talents.firstHit.penetration) {
+        firstHit.total += talents.firstHit.damage;
+        firstHit.penetration += talents.firstHit.penetration;
+    }
+    // Critical damage bonus of the attacker's talents, applied by the target (actor.js)
+    if (talents.crit) rollData.talentCrit = { bonus: talents.crit, name: talents.critName };
+    else delete rollData.talentCrit;
     // Called shot: the hit goes to the chosen location (core p. 269)
     const firstLocation = (rollData.attackType?.name === "called_shot" && rollData.calledShot)
         ? rollData.calledShot : _getLocation(rollData.attackResult);
@@ -247,7 +278,7 @@ async function _rollDamage(rollData) {
             penetration,
             rollData.attackDos,
             rollData.aim?.isAiming,
-            rollData.weapon.traits
+            traits
         );
         additionalHit.location = _getAdditionalLocation(firstLocation, i);
         rollData.damages.push(additionalHit);

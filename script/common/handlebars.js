@@ -29,6 +29,8 @@ function preloadHandlebarsTemplates() {
         "systems/dark-heresy/template/sheet/malignancy.hbs",
         "systems/dark-heresy/template/sheet/mutation.hbs",
         "systems/dark-heresy/template/sheet/talent.hbs",
+        "systems/dark-heresy/template/dialog/talents.hbs",
+        "systems/dark-heresy/template/chat/talents.hbs",
         "systems/dark-heresy/template/sheet/trait.hbs",
         "systems/dark-heresy/template/sheet/special-ability.hbs",
         "systems/dark-heresy/template/sheet/psychic-power.hbs",

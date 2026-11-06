@@ -13,6 +13,7 @@ import { confirmEvasion } from "./conditions.js";
 import { psychicChatListeners } from "./psychic.js";
 import { spendFate, fateAddDegree, canSpendOn, onBurnFateClick, rollActor } from "./fate.js";
 import { onMindTableClick, onMindAddClick } from "./mind.js";
+import { onTalentRerollClick } from "./talents.js";
 
 
 /**
@@ -50,6 +51,8 @@ export function chatListeners(html) {
         if (message?.getFlag("dark-heresy", "mindAdded")) button.disabled = true;
         button.addEventListener("click", event => onMindAddClick(event));
     });
+    html.querySelectorAll(".dh-talent-reroll")?.forEach(button => button.addEventListener("click",
+        event => onTalentRerollClick(event, { commonRoll, combatRoll, damageRoll })));
     html.querySelectorAll(".reload-Weapon")?.forEach(button => button.addEventListener("click", event => onReloadClick(event)));
     html.querySelectorAll(".dark-heresy.chat.roll>.background.border")?.forEach(button => button.addEventListener("dblclick", event => onChatRollClick(event)));
 }
@@ -130,6 +133,8 @@ async function rerollTest(message) {
     delete rollData.damages; // Reset so no old data is shown on failure
     delete rollData.fateDegrees;
     delete rollData.fateBonus;
+    delete rollData.rerollBy;
+    delete rollData.talentRerolls;
 
     rollData.flags.isReRoll = true;
     rollData.isReRoll = true;
@@ -160,6 +165,12 @@ async function onTestClick(ev) {
     // Stunned, grappled, after an All Out Attack, reaction spent, feinted… (core pp. 269–270, 281, 289)
     if (!(await confirmEvasion(actor, rollData))) return;
     rollData.evaderUuid = actor.uuid;
+    // The evasion is a new test: the attack's talents and re-roll state do not carry over
+    rollData.isReRoll = false;
+    rollData.flags.isReRoll = false;
+    rollData.talents = [];
+    delete rollData.talentRerolls;
+    delete rollData.talentForce;
     let evasions = {
         dodge: DarkHeresyUtil.createSkillRollData(actor, "dodge"),
         parry: DarkHeresyUtil.createSkillRollData(actor, "parry"),

@@ -6,6 +6,7 @@ import { applyOwnConditions, rollActor, feintTarget } from "./conditions.js";
 import { twoWeaponOption, applyTwoWeapon } from "./two-weapon.js";
 import { psychicDialogInfo } from "./psychic.js";
 import { offerFateBonus, applyFateBonus } from "./fate.js";
+import { talentDialogData, applyTalents, watchTalentBlock } from "./talents.js";
 
 /**
  * Show a generic roll dialog.
@@ -15,7 +16,10 @@ export async function prepareCommonRoll(rollData) {
     // Prone, pinned, guarded action… of the roller himself (re-rolls keep the modifier already applied)
     if (rollData.target && !rollData.flags?.isReRoll) rollData.autoNotes = applyOwnConditions(rollData, rollActor(rollData));
     offerFateBonus(rollData);
+    // Talents that apply by themselves and the ones that can be activated (talents.js)
+    rollData.talentDialog = rollData.isReRoll ? null : talentDialogData(rollData);
     const html = await foundry.applications.handlebars.renderTemplate("systems/dark-heresy/template/dialog/common-roll.hbs", rollData);
+    delete rollData.talentDialog;
     let dialog = new Dialog({
         title: game.i18n.localize(rollData.name),
         content: html,
@@ -38,6 +42,7 @@ export async function prepareCommonRoll(rollData) {
                     rollData.target.modifier = parseInt(html.find("#modifier")[0].value, 10);
                     rollData.flags.isDamageRoll = false;
                     rollData.flags.isCombatRoll = false;
+                    await applyTalents(rollData, html);
                     await applyFateBonus(rollData, html);
                     await commonRoll(rollData);
                 }
@@ -56,6 +61,10 @@ export async function prepareCommonRoll(rollData) {
             const target = html.find("#target");
             sel.change(() => {
                 target.val(sel.val());
+            });
+            watchTalentBlock(html, rollData, (copy, h) => {
+                if (copy.flags?.isEvasion) copy.evasions.selected = h.find("#selectedSkill").val() ?? copy.evasions.selected;
+                else copy.target.base = parseInt(h.find("#target").val(), 10) || copy.target.base;
             });
         }
     }, {
@@ -100,7 +109,7 @@ export async function prepareCombatRoll(rollData, actorRef) {
         // Two-Weapon Wielder: offer the second-weapon attack (core p. 281)
         rollData.twoWeaponOption = twoWeaponOption(rollActor(rollData) ?? attacker, rollData);
         const html = await foundry.applications.handlebars.renderTemplate("systems/dark-heresy/template/dialog/combat-roll.hbs",
-            { ...rollData, attackTypesRanged: attackTypes });
+            { ...rollData, attackTypesRanged: attackTypes, talentDialog: talentDialogData(rollData) });
         let dialog = new Dialog({
             title: rollData.name,
             content: html,
@@ -161,6 +170,7 @@ export async function prepareCombatRoll(rollData, actorRef) {
                             rollData.attackType.name = "standard";
                         }
 
+                        await applyTalents(rollData, html);
                         await applyFateBonus(rollData, html);
                         await combatRoll(rollData);
                     }
@@ -186,6 +196,13 @@ export async function prepareCombatRoll(rollData, actorRef) {
                     html.find("#modifier").val(suppressing ? plain.modifier : situational.modifier);
                     html.find("#range").val(suppressing ? "0" : String(situational.range ?? 0));
                 });
+                watchTalentBlock(html, rollData, (copy, h) => {
+                    copy.attackType = { ...copy.attackType, name: h.find("#attackType").val() ?? copy.attackType?.name };
+                    const range = h.find("#range").val();
+                    if (range !== undefined) copy.rangeMod = parseInt(range, 10);
+                    const aim = h.find("#aim").val();
+                    copy.aim = { val: parseInt(aim, 10) || 0, isAiming: aim !== undefined && aim !== "0" };
+                });
             }
         }, {width: 200});
         dialog.render(true);
@@ -201,7 +218,9 @@ export async function preparePsychicPowerRoll(rollData) {
     const info = psychicDialogInfo(rollData);
     rollData.autoNotes = info.notes;
     offerFateBonus(rollData);
+    rollData.talentDialog = talentDialogData(rollData);
     const html = await foundry.applications.handlebars.renderTemplate("systems/dark-heresy/template/dialog/psychic-power-roll.hbs", rollData);
+    delete rollData.talentDialog;
     let dialog = new Dialog({
         title: rollData.name,
         content: html,
@@ -232,6 +251,7 @@ export async function preparePsychicPowerRoll(rollData) {
                         rollData.psy.targets = [...game.user.targets].filter(t => t.actor).map(t => ({
                             tokenId: t.id, sceneId: t.scene?.id ?? canvas.scene?.id, name: t.name }));
                     }
+                    await applyTalents(rollData, html);
                     await applyFateBonus(rollData, html);
                     await combatRoll(rollData);
                 }
@@ -245,6 +265,11 @@ export async function preparePsychicPowerRoll(rollData) {
         default: "roll",
         close: () => {},
         render: html => {
+            watchTalentBlock(html, rollData, (copy, h) => {
+                copy.psy = { ...copy.psy, value: parseInt(h.find("#psy").val(), 10) || copy.psy?.value };
+                const type = h.find("#attackType").val();
+                if (type) copy.attackType = { ...copy.attackType, name: type };
+            });
             const text = html.find(".psy-range-text");
             const warning = html.find(".psy-range-warning");
             const refresh = event => {

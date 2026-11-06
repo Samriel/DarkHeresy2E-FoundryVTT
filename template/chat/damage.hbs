@@ -1,6 +1,10 @@
 <div class="dark-heresy chat roll">
     <div class="background border">
         <h1>{{itemName}}</h1>
+        {{#if damageReroll}}
+            <p><em>{{localize "TALENTS.DAMAGE_REROLLED" name=damageReroll.name}}</em></p>
+        {{/if}}
+        {{> "systems/dark-heresy/template/chat/talents.hbs" list=damageTalents}}
         {{#each damages as |damage|}}
             <h3 class="separator damage-location" data-location={{location}}>{{localize location}}{{#if damage.targetName}} — {{damage.targetName}}{{/if}}</h3>
             <div>
@@ -19,6 +23,7 @@
 	    {{#if sprayJam}}
 	    <p><strong style="color: var(--color-failure)">{{localize "AREA.SPRAY_JAM"}}</strong></p>
 	    {{/if}}
+	    {{> "systems/dark-heresy/template/chat/talents.hbs" rerolls=damageRerolls phase="damage"}}
 	    <div class="wrapper flex-column">
 	        {{#if weapon.traits.spray}}
 	        <button class="spray-dodge">{{localize "AREA.SPRAY_DODGE"}}</button>

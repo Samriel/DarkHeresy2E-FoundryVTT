@@ -25,6 +25,9 @@
             {{/each}}
         </ul>
         <br>
+        {{#if talentNotes}}
+        <p><strong>{{localize "TALENTS.CHAT"}}:</strong> {{#each talentNotes}}{{this}}{{#unless @last}}; {{/unless}}{{/each}}</p>
+        {{/if}}
         <div>Current <b>Wounds: </b>{{totalWounds}}. <b>Critical Damage: </b>{{totalCritWounds}}</div>
         {{#if (dhReminders special)}}
         <p><strong>{{localize "CHAT.QUALITY_REMINDERS"}}:</strong> {{dhReminders special}}</p>

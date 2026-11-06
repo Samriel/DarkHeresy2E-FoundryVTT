@@ -1,7 +1,7 @@
 <div class="dark-heresy chat roll" data-actor-id="{{ownerId}}" data-item-id="{{itemId}}" {{#if tokenId}}data-token-id="{{tokenId}}"{{/if}}>
     <div class="background border">
         {{#if isReRoll}}
-            <h1>{{localize "CHAT.REROLL"}}</h1>
+            <h1>{{#if rerollBy}}{{localize "TALENTS.REROLL_HEADER" name=rerollBy}}{{else}}{{localize "CHAT.REROLL"}}{{/if}}</h1>
         {{/if}}
         <h1>{{name}} ({{target.final}})</h1>
         {{#if flags.isSuccess}}
@@ -11,6 +11,7 @@
         {{/if}}
 
         <p><strong>{{localize "CHAT.TEST_MODIFIER"}}:</strong> {{target.modifier}}</p>
+        {{> "systems/dark-heresy/template/chat/talents.hbs" list=talents}}
 
         {{#if rolledWith}}
             <p><strong>{{localize "CHAT.ROLLED_WITH"}}:</strong> {{rolledWith}}</p>
@@ -131,6 +132,7 @@
                 </div>
             {{/unless}}
         {{/if}}
+        {{> "systems/dark-heresy/template/chat/talents.hbs" rerolls=talentRerolls phase="test"}}
         {{#if flags.isAttack}}
             {{#if flags.isSuccess}}
                 <div class="wrapper flex-column">

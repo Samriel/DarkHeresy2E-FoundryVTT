@@ -1,0 +1,17 @@
+<div class="dh-talents" style="flex-basis: 100%">
+    {{#if talentDialog}}
+        <div class="wrapper" style="flex-basis: 100%"><strong>{{localize "TALENTS.DIALOG"}}</strong></div>
+        {{#each talentDialog.passive}}
+            <div class="wrapper" style="flex-basis: 100%"><em>{{name}}: {{text}}</em></div>
+        {{/each}}
+        {{#each talentDialog.toggles}}
+            <div class="wrapper dh-talent-option" style="flex-basis: 100%">
+                <label><input type="checkbox" class="dh-talent-toggle" data-key="{{key}}"{{#if checked}} checked{{/if}} />
+                    {{name}}: {{text}}{{#if fate}} <em>({{localize "TALENTS.FATE_COST"}})</em>{{/if}}</label>
+                {{#if input}}
+                    <input type="number" class="dh-talent-input" data-key="{{key}}" min="{{input.min}}" max="{{input.max}}" value="{{input.value}}" style="max-width: 4em" />
+                {{/if}}
+            </div>
+        {{/each}}
+    {{/if}}
+</div>

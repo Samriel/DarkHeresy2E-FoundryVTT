@@ -1,7 +1,7 @@
 <div class="dark-heresy chat roll">
     <div class="background border">
         {{#if isReRoll}}
-            <h1>{{localize "CHAT.REROLL"}}</h1>
+            <h1>{{#if rerollBy}}{{localize "TALENTS.REROLL_HEADER" name=rerollBy}}{{else}}{{localize "CHAT.REROLL"}}{{/if}}</h1>
         {{/if}}
         <h1>{{name}} ({{target.final}})</h1>
         {{#if flags.isSuccess}}
@@ -10,6 +10,7 @@
         <h3><span style="color: var(--color-failure)">{{localize "CHAT.FAILURE"}}</span> ({{result}})</h3>
         {{/if}}
         <p><strong>{{localize "CHAT.TEST_MODIFIER"}}:</strong> {{modifier}}</p>
+        {{> "systems/dark-heresy/template/chat/talents.hbs" list=talents}}
         {{#if fateBonus}}
         <p><em>{{#if (eq fateBonus "applied")}}{{localize "FATE_POINTS.BONUS_APPLIED"}}{{else}}{{localize "FATE_POINTS.BONUS_WASTED"}}{{/if}}</em></p>
         {{/if}}
@@ -18,6 +19,7 @@
         {{else}}
             <p><strong>{{localize "CHAT.DOF"}}:</strong> {{dof}}</p>
         {{/if}}
+        {{> "systems/dark-heresy/template/chat/talents.hbs" rerolls=talentRerolls phase="test"}}
         {{#if numberOfHits}}
             <p><strong>{{localize "CHAT.REMAINING_NUMBER_OF_HIT"}}:</strong> {{numberOfHits}}</p>
             <div class="centerBtn"><button class="invoke-damage">{{localize "CHAT.ROLL_DAMAGE"}}</button></div>

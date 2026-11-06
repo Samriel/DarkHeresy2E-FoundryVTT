@@ -38,6 +38,7 @@ import { registerPsychic } from "./common/psychic.js";
 import { registerCombatActions, combatActionMenu } from "./common/combat-actions.js";
 import { registerCover } from "./common/cover.js";
 import { registerEnvironment } from "./common/environment.js";
+import { registerTalentDefinitions } from "./common/talents/index.js";
 import { replaceSymbols } from "./common/roll.js";
 import DarkHeresyUtil from "./common/util.js";
 import { registerTablesApi, registerTablesSocket } from "./common/tables.js";
@@ -98,6 +99,7 @@ Hooks.once("init", function() {
     registerCombatActions({ prepareCombatRoll, util: DarkHeresyUtil });
     registerCover();
     registerEnvironment();
+    registerTalentDefinitions();
     game.macro = DhMacroUtil;
     const sheets = foundry.applications.apps.DocumentSheetConfig;
     sheets.unregisterSheet(Actor, "core", foundry.appv1.sheets.ActorSheet);

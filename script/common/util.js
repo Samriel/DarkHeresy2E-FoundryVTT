@@ -124,6 +124,7 @@ export default class DarkHeresyUtil {
 
         return foundry.utils.mergeObject(this.createCommonNormalRollData(actor, skill), {
             name: skill.label,
+            skillKey: skillName, // for talents (talents.js)
             characteristics: characteristics
         });
     }
@@ -132,7 +133,9 @@ export default class DarkHeresyUtil {
         const skill = actor.skills[skillName];
         const speciality = skill.specialities[specialityName];
         return foundry.utils.mergeObject(this.createCommonNormalRollData(actor, speciality), {
-            name: speciality.label
+            name: speciality.label,
+            skillKey: skillName,
+            specialityKey: specialityName
         });
     }
 

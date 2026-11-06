@@ -33,7 +33,7 @@ function damagePayload(message) {
         source: rollData.itemName ?? rollData.name ?? "",
         special: rollData.weapon?.special ?? "",
         attack: { psychic: Boolean(rollData.psy?.display), special: rollData.weapon?.special ?? "",
-            attackerId: rollData.ownerId ?? null },
+            attackerId: rollData.ownerId ?? null, talentCrit: rollData.talentCrit ?? null },
         damages: rollData.damages.map(d => ({
             amount: Number(d.total) || 0,
             location: d.location,
