@@ -79,16 +79,19 @@ const counts = t => !t.document.hidden && !OUT.some(s => t.actor?.statuses?.has(
  * @param {Token|null} attacker
  * @param {Token} target
  * @param {Function} adjacent (a, b) → boolean
- * @returns {{modifier: number, notes: string[]}}
+ * @returns {{modifier: number, notes: string[]}} the parts are also kept in rollData.situationalParts (darkness, fog,
+ *   weather, higher, outnumber: {modifier, allies: ids of the attacker's allies next to the target}) for talents
  */
 export function environmentModifiers(rollData, attacker, target, adjacent) {
     const env = sceneEnvironment();
     const melee = Boolean(rollData.weapon?.isMelee);
     const ranged = Boolean(rollData.weapon?.isRange);
     const notes = [];
+    const parts = rollData.situationalParts ??= {};
     let modifier = 0;
-    const add = (mod, key, data = {}) => {
+    const add = (part, mod, key, data = {}) => {
         modifier += mod;
+        parts[part] = mod;
         notes.push(game.i18n.format(key, { ...data, modifier: signed(mod) }));
     };
 
@@ -98,22 +101,25 @@ export function environmentModifiers(rollData, attacker, target, adjacent) {
         dark = false;
         notes.push(game.i18n.localize("ENVIRONMENT.DARKVISION_NOTE"));
     }
-    if (dark && melee) add(-20, "ENVIRONMENT.DARKNESS_NOTE");
-    else if (dark && ranged) add(-30, "ENVIRONMENT.DARKNESS_NOTE");
-    else if (env.fog && ranged) add(-20, "ENVIRONMENT.FOG_NOTE");
-    if (env.weather && (melee || ranged)) add(-20, "ENVIRONMENT.WEATHER_NOTE");
+    if (dark && melee) add("darkness", -20, "ENVIRONMENT.DARKNESS_NOTE");
+    else if (dark && ranged) add("darkness", -30, "ENVIRONMENT.DARKNESS_NOTE");
+    else if (env.fog && ranged) add("fog", -20, "ENVIRONMENT.FOG_NOTE");
+    if (env.weather && (melee || ranged)) add("weather", -20, "ENVIRONMENT.WEATHER_NOTE");
 
     if (melee && attacker && attacker !== target) {
         // Higher ground
-        if ((attacker.document.elevation ?? 0) > (target.document.elevation ?? 0)) add(10, "ENVIRONMENT.HIGHER_NOTE");
+        if ((attacker.document.elevation ?? 0) > (target.document.elevation ?? 0)) add("higher", 10, "ENVIRONMENT.HIGHER_NOTE");
         // Ganging up
         const allies = canvas.tokens.placeables.filter(t => t !== target && counts(t)
             && t.document.disposition === attacker.document.disposition && (t === attacker || adjacent(t, target)));
         const foes = canvas.tokens.placeables.filter(t => t !== attacker && counts(t)
             && t.document.disposition === target.document.disposition && (t === target || adjacent(t, attacker)));
         const ratio = allies.length / Math.max(1, foes.length);
-        if (ratio >= 3) add(20, "ENVIRONMENT.OUTNUMBER_NOTE", { allies: allies.length, foes: Math.max(1, foes.length) });
-        else if (ratio >= 2) add(10, "ENVIRONMENT.OUTNUMBER_NOTE", { allies: allies.length, foes: Math.max(1, foes.length) });
+        const bonus = ratio >= 3 ? 20 : ratio >= 2 ? 10 : 0;
+        if (bonus) {
+            add("outnumber", bonus, "ENVIRONMENT.OUTNUMBER_NOTE", { allies: allies.length, foes: Math.max(1, foes.length) });
+            parts.outnumber = { modifier: bonus, allies: allies.filter(t => t !== attacker).map(t => t.id) };
+        }
     }
     return { modifier, notes };
 }

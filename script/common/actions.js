@@ -15,14 +15,15 @@
  * "defensive" (Defensive Stance: an extra Evasion reaction, opponents −20 WS) or "cautious"
  * (Guarded Action: −10 WS/BS this turn, +10 Evasion); «allOut» (All Out Attack: no Evasion);
  * «feint» (token id of the target that cannot evade the next Standard Attack this turn); «twin»
- * (the free second attack of two-weapon fighting is pending).
+ * (the free second attack of two-weapon fighting is pending); «run» (moved farther than a Full Move this
+ * turn: Run or Charge).
  */
 
 import { sustainedPowers, sustainHalves } from "./psychic.js";
 
 const FLAG = "actions";
 const EMPTY = { attack: 0, aim: 0, move: 0, manual: 0, sustain: 0, sustainIds: [], charge: false, reaction: false,
-    reaction2: false, stance: null, allOut: false, feint: null, twin: false };
+    reaction2: false, stance: null, allOut: false, feint: null, twin: false, run: false };
 
 // Halves per attack type; called shot, charge, all-out attack and suppressing fire are full actions
 const ATTACK_COST = { standard: 1, semi_auto: 1, full_auto: 1, lightning: 1, swift: 1,
@@ -181,7 +182,9 @@ async function onMoveToken(token, movement) {
     const distance = (movement.history?.distance ?? 0) + (movement.passed?.distance ?? 0)
         + (movement.pending?.distance ?? 0);
     const move = distance <= 0 ? 0 : distance <= rates.half + 1e-6 ? 1 : 2;
-    if (move !== actionsOf(combatant).move) await update(combatant, { move });
+    const run = distance > rates.full + 1e-6;
+    const a = actionsOf(combatant);
+    if (move !== a.move || run !== a.run) await update(combatant, { move, run });
 }
 
 /** combatTurnChange: fresh actions for the new combatant, reactions reset each round (active GM only). */

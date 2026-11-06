@@ -10,6 +10,7 @@
             <div>
                 <p><strong>{{localize "CHAT.DAMAGE"}}:</strong> <span class="damage-total">{{damage.total}}</span> 
                 <strong class="damage-type">{{damageTypeShort ../weapon.damageType}}</strong>
+                {{#if damage.trueDamage}}<span class="damage-true">{{localize "TALENTS.EFFECT.TRUE_DAMAGE" value=damage.trueDamage}}</span>{{/if}}
 	            </p>
 	        </div>
 	        <p><strong>{{localize "CHAT.PENETRATION"}}:</strong> <span class="damage-penetration">{{penetration}}</span></p>

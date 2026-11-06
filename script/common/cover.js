@@ -58,8 +58,9 @@ export function coverArmour(actor, location) {
  * @param {Actor} actor
  * @param {number} worn points lost
  * @param {number} absorbed hits that hit the cover
+ * @param {{name: string, text: string}[]} [talents] the attacker's talents that wore it further
  */
-export async function wearCover(actor, worn, absorbed) {
+export async function wearCover(actor, worn, absorbed, talents = []) {
     const cover = coverOf(actor);
     if (!cover || !absorbed) return;
     const ap = Math.max(0, cover.ap - worn);
@@ -72,7 +73,9 @@ export async function wearCover(actor, worn, absorbed) {
         await actor.toggleStatusEffect(STATUS, { active: false });
         text += ` ${game.i18n.localize("COVER.DESTROYED")}`;
     }
-    await ChatMessage.create({ speaker: ChatMessage.getSpeaker({ actor }), content: card(game.i18n.localize("COVER.TITLE"), `<p>${text}</p>`) });
+    const list = talents.length ? await foundry.applications.handlebars.renderTemplate("systems/dark-heresy/template/chat/talents.hbs",
+        { list: talents }) : "";
+    await ChatMessage.create({ speaker: ChatMessage.getSpeaker({ actor }), content: card(game.i18n.localize("COVER.TITLE"), `<p>${text}</p>${list}`) });
 }
 
 /** Effect name with the armour points. */

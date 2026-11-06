@@ -13,18 +13,21 @@
  * - against(ctx) → effect(s): talents of the attack's target on the attacker's test (Hard Target…).
  * - evasion(ctx) → effect(s): talents of the attacker on an evasion test against his attack.
  *   Effect: { text, modifier, target (another target number), force: {result} | {success, dos},
- *   damage: {...} (kept for the damage roll of this attack, see damage step), apply(rollData),
+ *   damage: {...} (kept for the damage roll of this attack, see damage step), apply(rollData) (may be async),
  *   toggle, checked, fate, input: {min, max, value} with resolve(n) → effect, key (several per talent) }.
  *   toggle: true is an activated talent: a checkbox in the roll dialog, unticked unless checked; fate: 1
- *   spends a Fate point when ticked (an Unlucky waste cancels it).
+ *   spends a Fate point when ticked (an Unlucky waste cancels it); fate: "hit" spends it only when the
+ *   attack's damage is rolled, and the effect's saved damage applies only if the point was spent.
  * - after(ctx) → text: after the d100; changes rollData (dos, dof, flags.isSuccess) itself.
  * - reroll(ctx) → { text, modifier, limit: "round" | "combat" | "day" | "session" }: after a failed test,
  *   a re-roll button on the card (not on a re-roll). damageReroll(ctx) → same, on the damage card.
  * - damage(ctx) → { text, damage, penetration, proven, rfFace, rerollBelow, firstHit: {damage,
- *   penetration}, crit: n, apply(rollData) }: the damage roll of an attack. Effects saved from the test
- *   step (rollData.talentDamage) apply here too.
+ *   penetration, trueDamage}, crit: n, cover: n, apply(rollData) }: the damage roll of an attack. Effects
+ *   saved from the test step (rollData.talentDamage) apply here too. trueDamage ignores armour and
+ *   toughness; cover: extra points the attack wears off the target's cover (cover.js).
  * - defence(ctx) → { text, armour: n | {"ARMOUR.BODY": n…}, critReduce }: damage taken by the actor
  *   (DarkHeresyActor#applyDamage); armour counts only where worn armour covers the location.
+ * - init(): called once when the definition is registered (hooks of the talent).
  *
  * ctx: { actor, talent: {def, item, name, spec, rank}, rollData, kind (conditions.rollKind), skill,
  * speciality, characteristic, weapon (roll data), weaponItem, attackType, token, target (Token),
@@ -44,6 +47,7 @@ const grantSources = [];
  */
 export function registerTalents(list) {
     defs.push(...list);
+    for (const def of list) def.init?.();
 }
 
 /**
@@ -236,12 +240,13 @@ export function watchTalentBlock(html, rollData, read) {
  * @param {object} rollData
  * @param {object} effect
  */
-function applyEffect(rollData, effect) {
+async function applyEffect(rollData, effect) {
     if (effect.modifier) rollData.target.modifier = (Number(rollData.target.modifier) || 0) + effect.modifier;
     if (Number.isFinite(effect.target)) rollData.target.base = effect.target;
     if (effect.force) rollData.talentForce = { ...(rollData.talentForce ?? {}), ...effect.force, name: effect.talent.name };
-    if (effect.damage) (rollData.talentDamage ??= []).push({ ...effect.damage, name: effect.talent.name });
-    effect.apply?.(rollData);
+    // Saved for the damage roll and listed on its card with the effect's text
+    if (effect.damage) (rollData.talentDamage ??= []).push({ text: effect.text, ...effect.damage, name: effect.talent.name });
+    await effect.apply?.(rollData);
     (rollData.talents ??= []).push({ name: effectName(effect), text: effect.text });
 }
 
@@ -268,13 +273,35 @@ export async function applyTalents(rollData, html) {
                 if (!n) continue;
                 effect = { ...effect, ...effect.resolve(n) };
             }
-            if (effect.fate) {
+            // Paid when the damage is rolled (payTalentFate)
+            if (effect.fate === "hit") effect = { ...effect, damage: { ...effect.damage, fate: true } };
+            else if (effect.fate) {
                 const spent = await spendFate(rollActor(rollData), "talent", { detail: effect.talent.name });
                 if (!spent?.effective) continue;
             }
         }
-        applyEffect(rollData, effect);
+        await applyEffect(rollData, effect);
     }
+}
+
+/**
+ * Before the damage roll of an attack: spend the Fate points of talents ticked with fate: "hit"; a saved damage
+ * effect whose point was not spent is dropped. Not on a damage re-roll.
+ * @param {object} rollData
+ */
+export async function payTalentFate(rollData) {
+    if (rollData.damageReroll || !rollData.talentDamage?.some(e => e.fate)) return;
+    const actor = attackerOf(rollData);
+    const kept = [];
+    for (const effect of rollData.talentDamage) {
+        if (effect.fate) {
+            const spent = actor ? await spendFate(actor, "talent", { detail: effect.name }) : null;
+            if (!spent?.effective) continue;
+            delete effect.fate;
+        }
+        kept.push(effect);
+    }
+    rollData.talentDamage = kept;
 }
 
 /* -------------------------------------------- */
@@ -401,11 +428,12 @@ export async function onTalentRerollClick(event, rolls) {
  * test step. Listed in rollData.damageTalents.
  * @param {object} rollData
  * @returns {{damage: number, penetration: number, proven: number, rfFace: number|null, rerollBelow: number,
- *   firstHit: {damage: number, penetration: number}, crit: number, critName: string}}
+ *   firstHit: {damage: number, penetration: number, trueDamage: number}, crit: number, critName: string,
+ *   cover: number, coverName: string}}
  */
 export function damageTalents(rollData) {
     const sum = { damage: 0, penetration: 0, proven: 0, rfFace: null, rerollBelow: 0,
-        firstHit: { damage: 0, penetration: 0 }, crit: 0, critName: "" };
+        firstHit: { damage: 0, penetration: 0, trueDamage: 0 }, crit: 0, critName: "", cover: 0, coverName: "" };
     rollData.damageTalents = [];
     const actor = attackerOf(rollData);
     if (!actor) return sum;
@@ -414,7 +442,7 @@ export function damageTalents(rollData) {
     for (const talent of actorTalents(actor)) {
         for (const effect of asList(talent.def.damage?.({ ...ctx, talent }))) effects.push({ ...effect, name: talent.name });
     }
-    effects.push(...(rollData.talentDamage ?? []));
+    effects.push(...(rollData.talentDamage ?? []).filter(e => !e.fate));
     for (const e of effects) {
         sum.damage += Number(e.damage) || 0;
         sum.penetration += Number(e.penetration) || 0;
@@ -423,9 +451,14 @@ export function damageTalents(rollData) {
         sum.rerollBelow = Math.max(sum.rerollBelow, Number(e.rerollBelow) || 0);
         sum.firstHit.damage += Number(e.firstHit?.damage) || 0;
         sum.firstHit.penetration += Number(e.firstHit?.penetration) || 0;
+        sum.firstHit.trueDamage += Number(e.firstHit?.trueDamage) || 0;
         if (Number(e.crit)) {
             sum.crit += Number(e.crit);
             sum.critName = [sum.critName, e.name].filter(Boolean).join(", ");
+        }
+        if (Number(e.cover)) {
+            sum.cover += Number(e.cover);
+            sum.coverName = [sum.coverName, e.name].filter(Boolean).join(", ");
         }
         e.apply?.(rollData);
         if (e.text) rollData.damageTalents.push({ name: e.name, text: e.text });
@@ -438,17 +471,19 @@ export function damageTalents(rollData) {
 /* -------------------------------------------- */
 
 /**
- * Talents of a character taking damage, and the attacker's critical damage bonus.
+ * Talents of a character taking damage, and the attacker's critical damage and cover bonuses.
  * @param {Actor} actor the target
- * @param {object} [attack] attack data of the damage request (attackerId, talentCrit)
- * @returns {{armourAt: Function, critReduce: number, critBonus: number, notes: string[]}} armourAt(location) → extra
- *   armour points at a hit location ("ARMOUR.BODY"…); a talent's armour is a number (every location the worn
- *   armour covers) or {location: points}
+ * @param {object} [attack] attack data of the damage request (attackerId, talentCrit, talentCover)
+ * @returns {{armourAt: Function, critReduce: number, critBonus: number, cover: {bonus: number, name: string}|null,
+ *   notes: string[]}} armourAt(location) → extra armour points at a hit location ("ARMOUR.BODY"…); a talent's armour
+ *   is a number (every location the worn armour covers) or {location: points}; cover: extra points the attack wears
+ *   off the cover if it wears it at all
  */
 export function defenceTalents(actor, attack = {}) {
     const armour = [];
     const out = { armourAt: location => armour.reduce((sum, a) => sum + (typeof a === "number" ? a : Number(a[location]) || 0), 0),
-        critReduce: 0, critBonus: Number(attack?.talentCrit?.bonus) || 0, notes: [] };
+        critReduce: 0, critBonus: Number(attack?.talentCrit?.bonus) || 0,
+        cover: Number(attack?.talentCover?.bonus) ? attack.talentCover : null, notes: [] };
     if (out.critBonus) out.notes.push(`${attack.talentCrit.name}: ${game.i18n.format("TALENTS.CRIT_BONUS", { bonus: out.critBonus })}`);
     const ctx = { actor, attack, bonus: key => Number(actor?.characteristics?.[key]?.bonus) || 0 };
     for (const talent of actorTalents(actor)) {

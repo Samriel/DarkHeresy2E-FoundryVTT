@@ -17,6 +17,8 @@
  * - Target in Defensive Stance: −20 to melee attacks (p. 269). Grappled target: +20 to melee attacks of
  *   anyone but its grapple partner (p. 281).
  * - Darkness, fog and smoke, weather, higher ground, ganging up (pp. 283, 285): environment.js.
+ * The parts talents may cancel are kept in rollData.situationalParts ({intoMelee, darkness, fog, weather, higher,
+ * outnumber: {modifier, allies: token ids}}), the single target in rollData.targetTokenId.
  */
 import { sizeHitModifier } from "./traits.js";
 import { applyTrainingModifier } from "./weapons.js";
@@ -96,7 +98,9 @@ export function rangeBand(dist, range, engaged) {
 export function applySituationalModifiers(rollData, actor) {
     const notes = applyTrainingModifier(rollData, actor);
     delete rollData.helplessTarget;
+    const parts = rollData.situationalParts = {};
     const target = game.user.targets.size === 1 ? [...game.user.targets][0] : null;
+    rollData.targetTokenId = target?.id ?? null;
     if (!target?.actor || !canvas.ready) return notes;
     const attacker = canvas.tokens.controlled.find(t => t.actor?.id === actor?.id)
         ?? actor?.getActiveTokens?.()[0] ?? null;
@@ -147,6 +151,7 @@ export function applySituationalModifiers(rollData, actor) {
                 notes.push(game.i18n.localize("RANGE.INTO_MELEE_IGNORED_NOTE"));
             } else if (engagedWith.length) {
                 modifier -= 20;
+                parts.intoMelee = -20;
                 notes.push(game.i18n.localize("RANGE.INTO_MELEE_NOTE"));
             }
             if (prone && band?.mod !== 30) {
