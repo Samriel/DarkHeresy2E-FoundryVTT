@@ -377,6 +377,7 @@ export async function fateDialog(actor) {
     buttons.push({ action: "cancel", label: game.i18n.localize("BUTTON.CANCEL"), icon: "fa-solid fa-times" });
     const choice = await foundry.applications.api.DialogV2.wait({
         window: { title: game.i18n.format("FATE_POINTS.DIALOG_TITLE", { name: actor.name }) },
+        classes: ["dh-fate-dialog"],
         position: { width: 420 },
         content,
         buttons,

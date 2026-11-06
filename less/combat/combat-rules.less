@@ -35,4 +35,11 @@
 .dh-combat-action-dialog {
   .hint { margin: 0.2em 0; }
   .dh-action-hint { min-height: 3em; }
+  h4 { margin: 0.6em 0 0.2em; border-bottom: 1px solid var(--color-border-light-2, currentColor); }
+  .subtlety-log td { padding: 1px 4px; font-size: var(--font-size-12, 12px); }
+}
+// Fate dialog: up to six choices, two per row instead of one squeezed row
+.dh-fate-dialog .form-footer {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
 }

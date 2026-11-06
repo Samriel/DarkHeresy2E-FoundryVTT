@@ -89,7 +89,7 @@ export async function firstAid(healer) {
     }
     const options = tokens.map(t => `<option value="${t.id}">${foundry.utils.escapeHTML(t.name)} — ${
         game.i18n.localize(`MEDICAE.STATE_${woundState(t.actor).toUpperCase()}`)}</option>`).join("");
-    const content = `<div class="dark-heresy dialog"><div class="wrapper"><label>${game.i18n.localize("MEDICAE.PATIENT")}</label>
+    const content = `<div class="dh-combat-action-dialog"><div class="form-group"><label>${game.i18n.localize("MEDICAE.PATIENT")}</label>
         <select name="patient">${options}</select></div></div>`;
     const tokenId = await foundry.applications.api.DialogV2.prompt({
         window: { title: game.i18n.format("MEDICAE.FIRST_AID_TITLE", { name: healer.name }) },

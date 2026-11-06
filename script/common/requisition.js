@@ -101,14 +101,15 @@ export async function requisition(item, actor) {
         && AVAILABILITY_MODIFIER[i.system.availability] !== null && AVAILABILITY_MODIFIER[i.system.availability] < availMod);
     const barter = barterItems.map(i => `<option value="${i.id}">${esc(i.name)} (${signed(availMod - AVAILABILITY_MODIFIER[i.system.availability])})</option>`).join("");
     const L = k => game.i18n.localize(k);
-    const content = `<div class="dark-heresy dialog requisition">
+    // Standard form markup (not the sheet's .dark-heresy styles, which are dark text for parchment)
+    const content = `<div class="dh-combat-action-dialog dh-requisition">
         <p>${esc(actor.name)} — ${L("REQUISITION.AVAILABILITY")}: <strong>${availLabel}</strong></p>
         <div class="form-group"><label>${L("REQUISITION.CRAFTSMANSHIP")}</label><select name="craftsmanship">${crafts}</select></div>
         <div class="form-group"><label>${L("REQUISITION.LOCATION")}</label><input name="location" type="number" value="0"/></div>
-        <div class="form-group"><label>${L("REQUISITION.COMMERCE")}</label><input name="commerce" type="checkbox"/>
-            <label>${L("REQUISITION.SELLER")}</label><input name="seller" type="number" value="30" style="max-width:4em"/></div>
-        ${barter ? `<div class="form-group"><label>${L("REQUISITION.BARTER")}</label><select name="barter"><option value="">—</option>${barter}</select>
-            <label>${L("REQUISITION.DAMAGED")}</label><input name="damaged" type="checkbox"/></div>` : ""}
+        <div class="form-group"><label>${L("REQUISITION.COMMERCE")}</label><input name="commerce" type="checkbox"/></div>
+        <div class="form-group"><label>${L("REQUISITION.SELLER")}</label><input name="seller" type="number" value="30"/></div>
+        ${barter ? `<div class="form-group"><label>${L("REQUISITION.BARTER")}</label><select name="barter"><option value="">—</option>${barter}</select></div>
+            <div class="form-group"><label>${L("REQUISITION.DAMAGED")}</label><input name="damaged" type="checkbox"/></div>` : ""}
         <div class="form-group"><label>${L("REQUISITION.SACRIFICE")}</label><input name="sacrifice" type="checkbox"/></div>
         <div class="form-group"><label>${L("REQUISITION.INQUISITOR")}</label><input name="inquisitor" type="checkbox"/></div>
     </div>`;
@@ -358,11 +359,11 @@ export async function subtletyPanel() {
     const log = [...(game.settings.get("dark-heresy", "subtletyLog") ?? [])].reverse().slice(0, 50);
     const rows = log.map(e => `<tr><td>${new Date(e.time).toLocaleString()}</td><td>${L(e.key === "subtlety" ? "SUBTLETY.NAME" : "SUBTLETY.INQUISITOR")}</td>
         <td>${e.before} → ${e.value}</td><td>${esc(e.user)}</td><td>${esc(e.label)} ${esc(e.reason)}</td></tr>`).join("");
-    const content = `<div class="dark-heresy subtlety-panel">
+    const content = `<div class="dh-combat-action-dialog dh-subtlety-panel">
         <div class="form-group"><label>${L("SUBTLETY.NAME")}</label><input name="subtlety" type="number" min="0" max="100" value="${subtlety}"/></div>
         <div class="form-group"><label>${L("SUBTLETY.INQUISITOR")}</label><input name="inquisitor" type="number" min="0" max="100" value="${inquisitor}"/></div>
         <div class="form-group"><label>${L("SUBTLETY.REASON")}</label><input name="reason" type="text" value=""/></div>
-        <h3>${L("SUBTLETY.LOG")}</h3>
+        <h4>${L("SUBTLETY.LOG")}</h4>
         <div style="max-height: 240px; overflow-y: auto"><table class="subtlety-log">${rows || `<tr><td>—</td></tr>`}</table></div>
     </div>`;
     await foundry.applications.api.DialogV2.wait({
