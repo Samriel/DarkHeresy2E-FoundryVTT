@@ -132,7 +132,7 @@
                 </div>
             {{/unless}}
         {{/if}}
-        {{> "systems/dark-heresy/template/chat/talents.hbs" rerolls=talentRerolls phase="test"}}
+        {{> "systems/dark-heresy/template/chat/talents.hbs" rerolls=talentRerolls actions=talentActions phase="test"}}
         {{#if flags.isAttack}}
             {{#if flags.isSuccess}}
                 <div class="wrapper flex-column">

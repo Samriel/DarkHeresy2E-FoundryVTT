@@ -39,6 +39,7 @@ import { registerCombatActions, combatActionMenu } from "./common/combat-actions
 import { registerCover } from "./common/cover.js";
 import { registerEnvironment } from "./common/environment.js";
 import { registerTalentDefinitions } from "./common/talents/index.js";
+import { registerTalentHooks } from "./common/talents.js";
 import { replaceSymbols } from "./common/roll.js";
 import DarkHeresyUtil from "./common/util.js";
 import { registerTablesApi, registerTablesSocket } from "./common/tables.js";
@@ -100,6 +101,7 @@ Hooks.once("init", function() {
     registerCover();
     registerEnvironment();
     registerTalentDefinitions();
+    registerTalentHooks();
     game.macro = DhMacroUtil;
     const sheets = foundry.applications.apps.DocumentSheetConfig;
     sheets.unregisterSheet(Actor, "core", foundry.appv1.sheets.ActorSheet);

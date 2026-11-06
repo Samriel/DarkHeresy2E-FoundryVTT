@@ -440,6 +440,12 @@ export class DarkHeresyActor extends Actor {
             toughnessBonus = 0;
             daemonic = 0;
         }
+        // Damage that ignores armour and toughness (talents: Warp Lock, Bulwark of Faith)
+        const direct = Boolean(attack?.direct);
+        if (direct) {
+            toughnessBonus = 0;
+            daemonic = 0;
+        }
         const graviton = Boolean(qualityValue(special, "graviton"));
         // Talents: extra armour (Armour-Monger), less critical damage (True Grit), the attacker's bonus (talents.js)
         const talents = defenceTalents(this, attack);
@@ -455,13 +461,13 @@ export class DarkHeresyActor extends Actor {
         // Apply damage from multiple hits
         for (const damage of damages) {
             // Cover armour left after the earlier hits of this attack
-            const cover = Math.max(coverArmour(this, damage.location) - coverWorn, 0);
+            const cover = direct ? 0 : Math.max(coverArmour(this, damage.location) - coverWorn, 0);
             if (cover) {
                 coverHits++;
                 if (Number(damage.amount) > cover) coverWorn++;
             }
             // Get the armour for the location (and cover) and minus penetration, no negatives
-            const worn = this._getArmour(damage.location);
+            const worn = direct ? 0 : this._getArmour(damage.location);
             const talentArmour = worn > 0 ? talents.armourAt(damage.location) : 0;
             let armour = Math.max(worn + talentArmour + cover - Number(damage.penetration), 0);
             // Graviton: extra damage equal to the armour points at the location

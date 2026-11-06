@@ -1,6 +1,13 @@
 {{#if list}}
     <p class="dh-talents-applied"><strong>{{localize "TALENTS.CHAT"}}:</strong> {{#each list}}{{name}} ({{text}}){{#unless @last}}; {{/unless}}{{/each}}</p>
 {{/if}}
+{{#if actions}}
+    <div class="wrapper flex-column">
+        {{#each actions}}
+            <button type="button" class="dh-talent-action" data-key="{{key}}">{{name}}: {{text}}{{#if fate}} ({{localize "TALENTS.FATE_COST"}}){{/if}}</button>
+        {{/each}}
+    </div>
+{{/if}}
 {{#if rerolls}}
     <div class="wrapper flex-column">
         {{#each rerolls}}

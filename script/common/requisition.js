@@ -21,6 +21,8 @@
  * are whispered to the GMs and logged. The GM panel (system settings) edits them and rolls Subtlety tests.
  */
 
+import { findTalent } from "./talents.js";
+
 const SOCKET = "system.dark-heresy";
 const LOG_LIMIT = 200;
 
@@ -181,7 +183,15 @@ export async function resolveRequisition(item, actor, choice) {
 
     // Whose Influence
     const inquisitorInfluence = Number(game.settings.get("dark-heresy", "inquisitorInfluence")) || 0;
-    const base = choice.inquisitor ? inquisitorInfluence : Number(actor.system.characteristics.influence.total) || 0;
+    let base = choice.inquisitor ? inquisitorInfluence : Number(actor.system.characteristics.influence.total) || 0;
+    // Contact Network (core p. 163): Fellowship instead of Influence, when it is higher
+    const network = choice.inquisitor ? null : findTalent(actor, "contactNetwork");
+    const fellowship = Number(actor.system.characteristics.fellowship?.total) || 0;
+    const talents = [];
+    if (network && fellowship > base && availMod !== null && !choice.sacrifice) {
+        base = fellowship;
+        talents.push({ name: network.name, text: game.i18n.format("TALENTS.EFFECT.CONTACT_NETWORK", { value: fellowship }) });
+    }
     const modifier = Math.max(-60, Math.min(60, mods.reduce((a, [, m]) => a + m, 0)));
     let test;
     if (availMod === null) {
@@ -222,7 +232,7 @@ export async function resolveRequisition(item, actor, choice) {
         craftsmanship: game.i18n.localize(cfg.craftmanship[choice.craftsmanship] ?? choice.craftsmanship),
         mods: mods.map(([label, m]) => ({ label, value: signed(m) })), modifier: signed(modifier),
         base, target: test.target ?? null, result: test.result ?? null, automatic: Boolean(test.automatic),
-        success: test.success, dos: test.dos, dof: test.dof, lines
+        success: test.success, dos: test.dos, dof: test.dof, lines, talents
     };
     const content = await foundry.applications.handlebars.renderTemplate("systems/dark-heresy/template/chat/requisition.hbs", record);
     await ChatMessage.create({ content, rolls, speaker: ChatMessage.getSpeaker({ actor }),

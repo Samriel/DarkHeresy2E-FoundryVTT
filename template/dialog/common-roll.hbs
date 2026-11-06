@@ -21,7 +21,11 @@
             <div class="wrapper">
                 <label>{{localize "DIALOG.ROLL_WITH"}}</label>
                 <select id="selectedSkill">
+                    {{#if evasionOptions}}
+                    {{selectOptions evasionOptions selected=evasions.selected localize=true}}
+                    {{else}}
                     {{selectOptions (config "evasions") selected=evasions.selected localize=true}}
+                    {{/if}}
                 </select>
             </div>    
         {{/if}}

@@ -129,7 +129,8 @@ async function announceFear(combat) {
         const content = await foundry.applications.handlebars.renderTemplate("systems/dark-heresy/template/chat/fear.hbs",
             { name: c.token?.name ?? c.actor.name, rating, modifier, modifierText: modifier >= 0 ? `+${modifier}` : `${modifier}` });
         await ChatMessage.create({ content, flags: { "dark-heresy.fear": { rating, modifier, name: c.token?.name ?? c.actor.name,
-            warp: isWarpEntity(c.actor) } } });
+            warp: isWarpEntity(c.actor), daemonic: traitRating(c.actor, "daemonic") > 0,
+            sceneId: c.sceneId ?? combat.scene?.id ?? null, tokenId: c.tokenId ?? null } } });
     }
     if (fresh.length) await combat.setFlag("dark-heresy", "fearAnnounced", [...announced, ...fresh]);
 }
@@ -161,8 +162,10 @@ export function onFearClick(event, prepareCommonRoll, DarkHeresyUtil) {
     const rollData = DarkHeresyUtil.createFearTestRolldata(actor);
     rollData.target.modifier = fear.modifier;
     rollData.name = game.i18n.format("FEAR.TEST_NAME", { name: fear.name, rating: fear.rating });
-    // fear cards are posted only in a started combat; warp: Warp Shock corruption (p. 353)
-    rollData.fear = { rating: fear.rating, combat: true, warp: Boolean(fear.warp) };
+    // fear cards are posted only in a started combat; warp: Warp Shock corruption (p. 353); the source token
+    // for talents that answer a daemon's fear
+    rollData.fear = { rating: fear.rating, combat: true, warp: Boolean(fear.warp), daemonic: Boolean(fear.daemonic),
+        sceneId: fear.sceneId ?? null, tokenId: fear.tokenId ?? null, name: fear.name };
     prepareCommonRoll(rollData);
 }
 

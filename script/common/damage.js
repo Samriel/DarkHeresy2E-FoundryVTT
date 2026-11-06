@@ -90,6 +90,23 @@ export async function applyToActors(message, tokens) {
 }
 
 /**
+ * Apply damage that is not on a damage card (talents): directly when the user owns the actor, otherwise via the GM.
+ * @param {Actor} actor
+ * @param {Token|TokenDocument|null} token the actor's token (unlinked tokens)
+ * @param {object[]} damages [{amount, location, penetration, type}]
+ * @param {object} [attack] {direct: true ignores armour, toughness and force fields}
+ * @param {string} [source]
+ */
+export async function requestDamage(actor, token, damages, attack = {}, source = "") {
+    const doc = token?.document ?? token;
+    const request = { source, special: "", attack, damages, sceneId: doc?.parent?.id ?? null, tokenId: doc?.id ?? null,
+        actorId: actor.id, userId: game.user.id };
+    if (actor.isOwner) await applyDamageRequest(request);
+    else if (game.users.activeGM) game.socket.emit(SOCKET, { type: "applyDamage", request });
+    else ui.notifications.warn(game.i18n.format("DAMAGE.NO_GM", { name: actor.name }));
+}
+
+/**
  * Resolve the target actor of a request: the token's actor (synthetic for unlinked tokens) or the world actor.
  * @param {object} request
  * @returns {Actor|null}
@@ -106,7 +123,7 @@ function requestActor(request) {
 async function applyDamageRequest(request) {
     const actor = requestActor(request);
     if (!actor) return;
-    const blocked = await rollForceField(actor, request);
+    const blocked = !request.attack?.direct && await rollForceField(actor, request);
     if (!blocked) await actor.applyDamage(request.damages, request.attack);
 }
 
