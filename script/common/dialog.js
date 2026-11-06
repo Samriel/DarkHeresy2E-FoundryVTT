@@ -6,7 +6,10 @@ import { applyOwnConditions, rollActor, feintTarget } from "./conditions.js";
 import { twoWeaponOption, applyTwoWeapon } from "./two-weapon.js";
 import { psychicDialogInfo } from "./psychic.js";
 import { offerFateBonus, applyFateBonus } from "./fate.js";
-import { talentDialogData, applyTalents, watchTalentBlock } from "./talents.js";
+import { talentDialogData, applyTalents, watchTalentBlock, hasTalent } from "./talents.js";
+
+// Melee attack types that need a talent: Swift Attack (core p. 151), Lightning Attack (p. 159)
+const TALENT_ATTACKS = { swift: "swiftAttack", lightning: "lightningAttack" };
 
 /**
  * Show a generic roll dialog.
@@ -105,11 +108,17 @@ export async function prepareCombatRoll(rollData, actorRef) {
         if (rollData.weapon.isRange && !(rollData.attackType?.name in attackTypes)) {
             rollData.attackType = { ...rollData.attackType, name: Object.keys(attackTypes).find(key => key !== "none") };
         }
+        const attacking = rollActor(rollData) ?? attacker;
+        const attackTypesMelee = Object.fromEntries(Object.entries(game.darkHeresy.config.attackTypeMelee)
+            .filter(([key]) => !TALENT_ATTACKS[key] || hasTalent(attacking, TALENT_ATTACKS[key])));
+        if (rollData.weapon.isMelee && !(rollData.attackType?.name in attackTypesMelee)) {
+            rollData.attackType = { ...rollData.attackType, name: "standard" };
+        }
         offerFateBonus(rollData);
         // Two-Weapon Wielder: offer the second-weapon attack (core p. 281)
         rollData.twoWeaponOption = twoWeaponOption(rollActor(rollData) ?? attacker, rollData);
         const html = await foundry.applications.handlebars.renderTemplate("systems/dark-heresy/template/dialog/combat-roll.hbs",
-            { ...rollData, attackTypesRanged: attackTypes, talentDialog: talentDialogData(rollData) });
+            { ...rollData, attackTypesRanged: attackTypes, attackTypesMelee, talentDialog: talentDialogData(rollData) });
         let dialog = new Dialog({
             title: rollData.name,
             content: html,

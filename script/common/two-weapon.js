@@ -39,14 +39,17 @@ export function hasWielder(actor, melee) {
  * Two-weapon option for an attack with a weapon.
  * @param {Actor} actor
  * @param {object} rollData
- * @returns {{penalty: number}|null} null when the actor cannot fight with two weapons with it
+ * @returns {{penalty: number, talent?: string}|null} null when the actor cannot fight with two weapons with it
  */
 export function twoWeaponOption(actor, rollData) {
     if (!actor || rollData.psy?.display) return null;
     const melee = Boolean(rollData.weapon?.isMelee);
     if (!hasWielder(actor, melee)) return null;
-    if (talents(actor).some(t => MASTER.test(t.name))) return { penalty: 0 };
-    if (talents(actor).some(t => AMBIDEXTROUS.test(t.name))) return { penalty: -10 };
+    // The talent that lowers the penalty is named on the card
+    const master = talents(actor).find(t => MASTER.test(t.name));
+    if (master) return { penalty: 0, talent: master.name };
+    const ambidextrous = talents(actor).find(t => AMBIDEXTROUS.test(t.name));
+    if (ambidextrous) return { penalty: -10, talent: ambidextrous.name };
     return { penalty: -20 };
 }
 
@@ -60,8 +63,8 @@ export function twoWeaponOption(actor, rollData) {
 export function applyTwoWeapon(rollData, checked, weapon) {
     delete rollData.twoWeapon;
     if (!checked || !rollData.twoWeaponOption) return [];
-    const penalty = rollData.twoWeaponOption.penalty;
-    rollData.twoWeapon = { penalty };
+    const { penalty, talent } = rollData.twoWeaponOption;
+    rollData.twoWeapon = { penalty, talent };
     rollData.target.modifier = (Number(rollData.target.modifier) || 0) + penalty;
     const warnings = [];
     const kind = rollData.weapon.isMelee ? "melee" : "ranged";
