@@ -222,7 +222,7 @@ const DEFS = [
         // the combat, except what kills at once: fatigue penalties and the knock-out, the turn lost to a stun;
         // critical effects are a note on the damage report
         id: "unkillable",
-        match: /^(?:неубиваемый|unkillable)/i,
+        match: /^(?:неубиваемый|never\s+die|unkillable)/i,
         actions: ctx => ({ key: "invoke", label: s("INVOKE"), fate: 1, hint: s("UNKILLABLE_HINT"),
             disabled: needCombat(ctx) || running(ctx.actor, "unkillable"),
             run: () => ({ lines: [s("UNKILLABLE_ON", { name: esc(ctx.actor.name) })],

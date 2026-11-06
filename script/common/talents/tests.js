@@ -193,7 +193,7 @@ export default [
         // Unshakeable Faith (p. 161): degrees of failure on a Fear or pinning test − Willpower bonus;
         // none left: passed with one degree of success
         id: "unshakeableFaith",
-        match: /^(?:несокрушимая\s+вера|unshakeable\s+faith)/i,
+        match: /^(?:несокрушимая\s+вера|adamantium\s+faith|unshakeable\s+faith)/i,
         after: ({ rollData, bonus }) => {
             if (rollData.flags.isSuccess || !(rollData.flags?.isFear || (rollData.pinning && !rollData.pinning.recover))) return null;
             const wp = bonus("willpower");
@@ -505,7 +505,7 @@ export default [
     {
         // Blend In (p. 158): Fellowship instead of Agility for Shadowing (Stealth); ticked when Fellowship is higher
         id: "blendIn",
-        match: /^(?:лицо\s+в\s+толпе|blend\s+in)/i,
+        match: /^(?:лицо\s+в\s+толпе|face\s+in\s+a\s+crowd|blend\s+in)/i,
         test: ({ skill, actor }) => {
             if (skill !== "stealth") return null;
             const value = (Number(actor.characteristics.fellowship?.total) || 0) + (Number(actor.skills.stealth?.advance) || 0);
@@ -537,7 +537,7 @@ export default [
         // Master Chirurgeon (p. 162): +20 to Medicae; first aid ignores the Heavily Wounded penalty and has only −10
         // for Critical damage (medicae.js)
         id: "masterChirurgeon",
-        match: /^(?:превосходный\s+хирургеон|master\s+chirurgeon)/i,
+        match: /^(?:превосходный\s+хирургеон|superior\s+chirurgeon|master\s+chirurgeon)/i,
         test: ({ skill, rollData }) => {
             if (skill !== "medicae") return null;
             const aid = rollData.firstAid;

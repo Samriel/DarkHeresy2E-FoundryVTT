@@ -20,6 +20,9 @@ const UNARMED = /(?:безоружн|unarmed)/i;
 const SUPPRESSING = ["suppress_semi", "suppress_full"];
 const TECH_WEAPONS = ["plasma", "power", "exotic", "melta"];
 const OUT = ["dead", "unconscious"];
+// Bladed weapons for Blademaster: chain weapons and blades or axes by name
+const BLADE = /(?:меч|клин|нож|кинжал|топор|секир|сабл|тесак|шпаг|рапир|катан|chain|цепн|sword|blade|knife|dagger|axe|sabre|saber|cleaver|rapier|katana)/i;
+const SHIELD = /(?:щит|shield|defensive|защитн)/i;
 
 /** Does a talent's specialisation (Melee / Ranged) fit the weapon? No specialisation fits both. */
 const specFits = (spec, weapon) => !String(spec ?? "").trim() || (weapon?.isMelee ? MELEE_SPEC : RANGED_SPEC).test(spec);
@@ -226,7 +229,7 @@ export default [
     {
         // Deadeye Shot (p. 165, Melee or Ranged): no −20 for a Called Shot
         id: "deadeyeShot",
-        match: /^(?:убийственная\s+точность|deadeye\s+shot)/i,
+        match: /^(?:убийственная\s+точность|precision\s+killer|deadeye\s+shot)/i,
         test: ({ attackType, weapon, talent, rollData }) => (attackType === "called_shot" && weapon && !rollData.psy?.display
             && specFits(talent.spec, weapon) ? { modifier: 20, text: t("CALLED_SHOT", { modifier: "+20" }) } : null)
     },
@@ -464,5 +467,20 @@ export default [
         id: "nowhereToHide",
         match: /^(?:негде\s+прятаться|nowhere\s+to\s+hide)/i,
         damage: ({ weapon, rollData }) => (weapon ? { cover: weapon.traits?.skipAttackRoll ? 1 : Math.max(1, Number(rollData.attackDos) || 0) } : null)
+    },
+    {
+        // Blademaster (p. 159): re-roll one missed attack with a bladed weapon (chain, power and plain blades,
+        // axes) per round
+        id: "blademaster",
+        match: /^(?:мастер\s+клинка|blade\s*master)/i,
+        reroll: ({ weapon, weaponItem }) => (weapon?.isMelee && !weapon.traits?.skipAttackRoll
+            && BLADE.test(`${weaponItem?.name ?? ""} ${weapon.type ?? weaponItem?.system?.type ?? ""}`) ? { text: "", limit: "round" } : null)
+    },
+    {
+        // Shieldbearer (EB p. 69): with a shield, re-roll one failed Parry per round
+        id: "shieldbearer",
+        match: /^(?:щитоносец|shield[-\s]?bearer)/i,
+        reroll: ({ rollData, actor }) => (rollData.flags?.isEvasion && rollData.evasions?.selected === "parry"
+            && actor.items.some(i => i.type === "weapon" && SHIELD.test(`${i.name} ${i.system?.special ?? ""}`)) ? { text: "", limit: "round" } : null)
     }
 ];
