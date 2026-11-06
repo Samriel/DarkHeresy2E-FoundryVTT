@@ -744,12 +744,29 @@ export async function addDegreesOfSuccess(rollData, degrees = 1) {
 }
 
 /**
+ * Speaker of a roll: the selected token when it belongs to the roller, otherwise the roller. A roll from
+ * a sheet while another token is selected must not speak as that token: the message's token and actor
+ * decide whose actions are spent and who gets table results.
+ * @param {object} rollData
+ * @param {boolean} [evasion] the evading character rolls (an evasion carries the attack's owner)
+ * @returns {object}
+ */
+function rollSpeaker(rollData, evasion = false) {
+    const speaker = ChatMessage.getSpeaker();
+    const uuid = evasion ? rollData.evaderUuid : rollData.actorUuid;
+    const actor = (uuid ? fromUuidSync(uuid) : null) ?? game.actors.get(rollData.ownerId);
+    if (!(actor instanceof Actor)) return speaker;
+    if (canvas?.tokens?.get(speaker.token)?.actor?.uuid === actor.uuid) return speaker;
+    return ChatMessage.getSpeaker({ actor, token: actor.token ?? undefined });
+}
+
+/**
  * Post a roll to chat.
  * @param {object} rollData
  */
 async function _sendRollToChat(rollData) {
     // A test made for another token (opposed test of a power's target) speaks as that token
-    let speaker = rollData.speaker ?? ChatMessage.getSpeaker();
+    let speaker = rollData.speaker ?? rollSpeaker(rollData, rollData.flags?.isEvasion);
     let chatData = {
         user: game.user.id,
         rollMode: game.settings.get("core", "rollMode"),
@@ -789,7 +806,7 @@ async function _sendRollToChat(rollData) {
  * @param {object} rollData
  */
 export async function sendDamageToChat(rollData) {
-    let speaker = ChatMessage.getSpeaker();
+    let speaker = rollSpeaker(rollData);
     let chatData = {
         user: game.user.id,
         rollMode: game.settings.get("core", "rollMode"),
