@@ -7,7 +7,8 @@
  * - Natural Armour (X) / Machine (X): +X armour on all locations; the two do not stack (the larger counts).
  * - Size (X): replaces the actor's size (movement); attacks against it get the table 4-6 modifier.
  * - Daemonic (X): +X toughness bonus against damage, except force weapons, psychic powers, holy
- *   (Sanctified) attacks and attacks by other daemonic creatures.
+ *   (Sanctified) attacks and attacks by other daemonic creatures. Ratings pass registered filters (an aura of
+ *   Daemonic Anathema takes the trait away); {raw: true} reads the sheet.
  * - Fear (X): when the creature is in a started combat, players get a chat card with a Willpower test
  *   at the table 4-5 penalty. A character whose Insanity bonus is at least twice the rating is immune
  *   (core p. 353); a Daemonic or Warp-unstable source marks the test for Warp Shock.
@@ -37,20 +38,34 @@ const UNNATURAL = /^(?:сверхъестественн[а-яё]*|unnatural)\s+(
 
 export const FEAR_MODIFIER = { 1: 0, 2: -10, 3: -20, 4: -30 };
 
+/** Filters of trait ratings (Daemonic Anathema): fn(actor, key, rating) → rating. */
+const ratingFilters = [];
+
+/**
+ * Register a filter of trait ratings, e.g. an aura that takes a trait's benefits away.
+ * @param {Function} fn (actor, key, rating) → rating
+ */
+export function registerTraitFilter(fn) {
+    ratingFilters.push(fn);
+}
+
 /**
  * The rating of a rated trait on an actor (0 if absent; the highest if repeated).
  * @param {Actor} actor
  * @param {string} key one of RATED
+ * @param {object} [options]
+ * @param {boolean} [options.raw=false] the rating on the sheet, before the filters
  * @returns {number}
  */
-export function traitRating(actor, key) {
+export function traitRating(actor, key, { raw = false } = {}) {
     let best = 0;
     for (const item of actor.items) {
         if (item.type !== "trait") continue;
         const m = item.name.trim().match(RATED[key]);
         if (m) best = Math.max(best, Number(m[1]));
     }
-    return best;
+    if (raw || !best) return best;
+    return ratingFilters.reduce((rating, fn) => fn(actor, key, rating), best);
 }
 
 /**
@@ -184,8 +199,16 @@ export function fearInsanityBonus(actor) {
  * @returns {boolean}
  */
 export function isWarpEntity(actor) {
-    return traitRating(actor, "daemonic") > 0
-        || Boolean(actor?.items?.some(i => i.type === "trait" && /варп-?\s*нестабильн|warp\s+instability/i.test(i.name)));
+    return traitRating(actor, "daemonic") > 0 || hasWarpInstability(actor);
+}
+
+/**
+ * Has the actor the Warp Instability trait?
+ * @param {Actor} actor
+ * @returns {boolean}
+ */
+export function hasWarpInstability(actor) {
+    return Boolean(actor?.items?.some(i => i.type === "trait" && /варп-?\s*нестабильн|warp\s+instability/i.test(i.name)));
 }
 
 /** Register fear announcements; call during init. */

@@ -23,8 +23,9 @@
  * - damage(ctx) → { text, damage, penetration, proven, rfFace, rerollBelow, firstHit: {damage,
  *   penetration}, crit: n, apply(rollData) }: the damage roll of an attack. Effects saved from the test
  *   step (rollData.talentDamage) apply here too.
- * - defence(ctx) → { text, armour: n | {"ARMOUR.BODY": n…}, critReduce }: damage taken by the actor
- *   (DarkHeresyActor#applyDamage); armour counts only where worn armour covers the location.
+ * - defence(ctx) → { text, armour: n | {"ARMOUR.BODY": n…}, natural, critReduce }: damage taken by the actor
+ *   (DarkHeresyActor#applyDamage); armour counts only where worn armour covers the location, or everywhere
+ *   with natural: true.
  *
  * ctx: { actor, talent: {def, item, name, spec, rank}, rollData, kind (conditions.rollKind), skill,
  * speciality, characteristic, weapon (roll data), weaponItem, attackType, token, target (Token),
@@ -441,20 +442,21 @@ export function damageTalents(rollData) {
  * Talents of a character taking damage, and the attacker's critical damage bonus.
  * @param {Actor} actor the target
  * @param {object} [attack] attack data of the damage request (attackerId, talentCrit)
- * @returns {{armourAt: Function, critReduce: number, critBonus: number, notes: string[]}} armourAt(location) → extra
- *   armour points at a hit location ("ARMOUR.BODY"…); a talent's armour is a number (every location the worn
- *   armour covers) or {location: points}
+ * @returns {{armourAt: Function, critReduce: number, critBonus: number, notes: string[]}} armourAt(location, worn) →
+ *   extra armour points at a hit location ("ARMOUR.BODY"…) with or without worn armour there; a talent's armour
+ *   is a number (every location) or {location: points}, natural armour counts on bare locations too
  */
 export function defenceTalents(actor, attack = {}) {
     const armour = [];
-    const out = { armourAt: location => armour.reduce((sum, a) => sum + (typeof a === "number" ? a : Number(a[location]) || 0), 0),
+    const points = (a, location) => (typeof a.armour === "number" ? a.armour : Number(a.armour[location]) || 0);
+    const out = { armourAt: (location, worn = true) => armour.reduce((sum, a) => sum + (worn || a.natural ? points(a, location) : 0), 0),
         critReduce: 0, critBonus: Number(attack?.talentCrit?.bonus) || 0, notes: [] };
     if (out.critBonus) out.notes.push(`${attack.talentCrit.name}: ${game.i18n.format("TALENTS.CRIT_BONUS", { bonus: out.critBonus })}`);
     const ctx = { actor, attack, bonus: key => Number(actor?.characteristics?.[key]?.bonus) || 0 };
     for (const talent of actorTalents(actor)) {
         const effect = talent.def.defence?.({ ...ctx, talent });
         if (!effect) continue;
-        if (effect.armour) armour.push(effect.armour);
+        if (effect.armour) armour.push({ armour: effect.armour, natural: Boolean(effect.natural) });
         out.critReduce += Number(effect.critReduce) || 0;
         if (effect.text) out.notes.push(`${talent.name}: ${effect.text}`);
     }
