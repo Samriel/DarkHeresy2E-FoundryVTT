@@ -6,7 +6,7 @@ export class TalentSheet extends DarkHeresyItemSheet {
             classes: ["dark-heresy", "sheet", "talent"],
             template: "systems/dark-heresy/template/sheet/talent.hbs",
             width: 500,
-            height: 369,
+            height: 500,
             tabs: [
                 {
                     navSelector: ".sheet-tabs",

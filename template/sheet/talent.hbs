@@ -24,9 +24,9 @@
             <div class="stats border">
                 <h1>{{localize "TITLE.STATS"}}</h1>
                 <div class="stats-row">
-                    <div class="stat prerequisites">
+                    <div class="stat prerequisites text-block">
                         <label>{{localize "TALENT.PREREQUISITES"}}</label>
-                        <input name="system.prerequisites" type="text" value="{{system.prerequisites}}" />
+                        <textarea name="system.prerequisites" rows="2">{{system.prerequisites}}</textarea>
                     </div>
                     <div class="stat tier">
                         <label>{{localize "TALENT.TIER"}}</label>
@@ -40,9 +40,9 @@
                     </div>
                 </div>
                 <div class="stats-row">
-                    <div class="stat benefit">
+                    <div class="stat benefit text-block">
                         <label>{{localize "TALENT.BENEFIT"}}</label>
-                        <input name="system.benefit" type="text" value="{{system.benefit}}" />
+                        <textarea name="system.benefit" rows="6">{{system.benefit}}</textarea>
                     </div>
                 </div>
             </div>

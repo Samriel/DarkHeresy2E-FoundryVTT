@@ -6,7 +6,7 @@ export class PsychicPowerSheet extends DarkHeresyItemSheet {
             classes: ["dark-heresy", "sheet", "psychic-power"],
             template: "systems/dark-heresy/template/sheet/psychic-power.hbs",
             width: 500,
-            height: 397,
+            height: 540,
             tabs: [
                 {
                     navSelector: ".sheet-tabs",

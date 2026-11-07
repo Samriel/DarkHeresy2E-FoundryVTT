@@ -29,3 +29,21 @@
 .dark-heresy .stats .stats-row .stat select {
     margin-left: 8px;
 }
+
+/* Long text (talent benefit, power description): a wrapping box over the rest of the row */
+.dark-heresy .stats .stats-row .stat.text-block {
+    flex: 1;
+    align-items: flex-start;
+}
+
+.dark-heresy .stats .stats-row .stat.text-block label {
+    padding-top: 2px;
+}
+
+.dark-heresy .stats .stats-row .stat.text-block textarea {
+    flex: 1;
+    margin-left: 8px;
+    font-size: 14px;
+    line-height: 1.35;
+    resize: vertical;
+}
